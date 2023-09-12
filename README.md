@@ -15,7 +15,7 @@
 | Name                      | ID        | Email                                  |                   Major & Minor                        |                 GitHub Profile                |
 |:-------------------------:|:---------:|:--------------------------------------:|:------------------------------------------------------:|:---------------------------------------------:|
 | Noshin Saiyara Chowdhury  | xxxxxxxxx | noshin.chowdhury2@mail.mcgill.ca       | Computer Engineering                                   | [Noshin03](https://github.com/Noshin03)       |
-| Kaifan Zheng              | xxxxxxxxx | kaifan.zheng@mail.mcgill.ca            | Computer Engineering                                   | [kaifanzheng](https://github.com/kaifanzheng) |
+| Kaifan Zheng              | 260962377 | kaifan.zheng@mail.mcgill.ca            | Computer Engineering                                   | [kaifanzheng](https://github.com/kaifanzheng) |
 | Chun Li                   | 260986765 | chun.li4@mail.mcgill.ca                | Software Engineering & Applied Artificial Intelligence | [chun-li9](https://github.com/chun-li9)       |
 | Yujin Li                  | 260968957 | yiujin.li@mail.mcgill.ca               | Software Engineering & Applied Artificial Intelligence | [YuJ-Li](https://github.com/YuJ-Li)           |
 
