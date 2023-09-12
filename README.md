@@ -12,9 +12,9 @@
 
 
 ## Team Members (Group 22)
-| Name                      | ID        | Email                                  |                   Major & Minor                        |
-|:-------------------------:|:---------:|:--------------------------------------:|:------------------------------------------------------:|
-| Noshin Saiyara Chowdhury  | xxxxxxxxx | noshin.chowdhury2@mail.mcgill.ca       | Computer Engineering                                   |
-| Kaifan Zheng              | xxxxxxxxx | kaifan.zheng@mail.mcgill.ca            | Computer Engineering                                   |
-| Chun Li                   | 260986765 | chun.li4@mail.mcgill.ca                | Software Engineering & Applied Artificial Intelligence |
-| Yujin Li                  | 260968957 | yiujin.li@mail.mcgill.ca               | Software Engineering & Applied Artificial Intelligence |
+| Name                      | ID        | Email                                  |                   Major & Minor                        |  GitHub Profile |
+|:-------------------------:|:---------:|:--------------------------------------:|:------------------------------------------------------:|:---------------:|
+| Noshin Saiyara Chowdhury  | xxxxxxxxx | noshin.chowdhury2@mail.mcgill.ca       | Computer Engineering                                   |                 |
+| Kaifan Zheng              | xxxxxxxxx | kaifan.zheng@mail.mcgill.ca            | Computer Engineering                                   |                 |
+| Chun Li                   | 260986765 | chun.li4@mail.mcgill.ca                | Software Engineering & Applied Artificial Intelligence |                 |
+| Yujin Li                  | 260968957 | yiujin.li@mail.mcgill.ca               | Software Engineering & Applied Artificial Intelligence | [YuJ-Li](https://github.com/YuJ-Li) |
