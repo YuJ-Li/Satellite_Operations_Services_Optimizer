@@ -1,4 +1,4 @@
-# Satellite_tasking_optimization
+# Satellite_tasking_optimization (Group 22)
 
 ## Project Description
 2023 McGill Capstone project with ASC/CSA
