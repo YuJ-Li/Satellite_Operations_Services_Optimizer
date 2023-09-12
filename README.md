@@ -11,7 +11,7 @@
 | XXX                       | McGill University ECE Departement |
 
 
-## Team Members
+## Team Members (Group 22)
 | Name                      | ID        | Email                                  |                   Major & Minor                        |
 |:-------------------------:|:---------:|:--------------------------------------:|:------------------------------------------------------:|
 | Noshin Saiyara Chowdhury  | xxxxxxxxx | noshin.chowdhury2@mail.mcgill.ca       | Computer Engineering                                   |
