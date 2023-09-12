@@ -18,3 +18,6 @@
 | Kaifan Zheng              | xxxxxxxxx | kaifan.zheng@mail.mcgill.ca            | Computer Engineering                                   | [kaifanzheng](https://github.com/kaifanzheng) |
 | Chun Li                   | 260986765 | chun.li4@mail.mcgill.ca                | Software Engineering & Applied Artificial Intelligence |                                               |
 | Yujin Li                  | 260968957 | yiujin.li@mail.mcgill.ca               | Software Engineering & Applied Artificial Intelligence | [YuJ-Li](https://github.com/YuJ-Li)           |
+
+## Additional details
+For further details, please visit our [wiki page](https://github.com/YuJ-Li/Satellite_tasking_optimization/wiki)
