@@ -4,11 +4,11 @@
 2023 McGill Capstone project with ASC/CSA
 
 ## Supervisors
-| Name                      |           Organization            |
-|:-------------------------:|:---------------------------------:|
-| Nathaniel Cziranka-Crooks |      Canadian Space Agency        |
-| Patrick Ivrin             |      Canadian Space Agency        |
-| XXX                       | McGill University ECE Departement |
+| Name                      |                  Email                  |          Organization             |
+|:-------------------------:|:---------------------------------------:|:---------------------------------:|
+| Nathaniel Cziranka-Crooks | nathaniel.cziranka-crooks@asc-csa.gc.ca |        Canadian Space Agency      |
+| Patrick Ivrin             |       patrick.irvin@asc-csa.gc.ca       |        Canadian Space Agency      |
+| XXX                       |               xxxxxxx                   | McGill University ECE Departement |
 
 
 ## Team Members (Group 22)
