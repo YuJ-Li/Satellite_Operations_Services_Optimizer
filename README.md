@@ -8,7 +8,7 @@
 |:-------------------------:|:---------------------------------------:|:---------------------------------:|
 | Nathaniel Cziranka-Crooks | nathaniel.cziranka-crooks@asc-csa.gc.ca |        Canadian Space Agency      |
 | Patrick Ivrin             |       patrick.irvin@asc-csa.gc.ca       |        Canadian Space Agency      |
-| XXX                       |               xxxxxxx                   | McGill University ECE Departement |
+| Dennis Giannacopoulos     |    dennis.giannacopoulos@mcgill.ca      | McGill University ECE Departement |
 
 
 ## Team Members (Group 22)
