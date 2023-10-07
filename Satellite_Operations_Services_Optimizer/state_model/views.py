@@ -5,14 +5,18 @@ from django.urls import reverse
 from .models import Satellite, SatelliteSchedule
 from django.utils import timezone
 
+
+
 def add_satellite(satelliteId, TLE, storageCapacity, powerCapacity, fieldOfView):
-    new_satellite = Satellite(satelliteId= satelliteId, 
-                              TLE = TLE, 
-                              storageCapacity = storageCapacity,
-                              powerCapacity = powerCapacity,
-                              fieldOfView = fieldOfView)
+    new_satellite = Satellite(satelliteId=satelliteId,
+                              TLE=TLE,
+                              storageCapacity=storageCapacity,
+                              powerCapacity=powerCapacity,
+                              fieldOfView=fieldOfView)
     new_satellite.save()
 
-def get_satellite_by_id(satellite_id)->Satellite:
-    satellite = Satellite.objects.get(satelliteId = satellite_id)
+
+def get_satellite_by_id(satellite_id) -> Satellite:
+    satellite = Satellite.objects.get(satelliteId=satellite_id)
     return satellite
+
