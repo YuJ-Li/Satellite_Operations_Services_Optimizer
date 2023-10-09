@@ -1,3 +1,4 @@
+from django.utils import timezone
 from datetime import datetime
 from django.test import TestCase
 from .views import add_satellite, get_satellite_by_id,get_all_satellites, delete_satellite_by_id, update_satellite_info
@@ -32,7 +33,7 @@ class SatelliteControllerTest(TestCase):
         self.assertEqual(len(get_all_satellites()),number_of_satellite)
     def test_update_satellite_info_to_database(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
-        satelliteSchedule = SatelliteSchedule(scheduleID = "station1",satellite = get_satellite_by_id("soso1"),activityWindow=datetime(2023, 10, 15, 14, 30))
+        satelliteSchedule = SatelliteSchedule(scheduleID = "station1",satellite = get_satellite_by_id("soso1"),activityWindow=timezone.now())
         satelliteSchedule.save()
         update_satellite_info(
                             satellite_id = "soso1",
