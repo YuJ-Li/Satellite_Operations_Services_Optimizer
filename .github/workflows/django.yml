@@ -27,4 +27,4 @@ jobs:
         pip install -r Satellite_Operations_Services_Optimizer/requirements.txt
     - name: Run Tests
       run: |
-        python Satellite_Operations_Services_Optimizer/manage.py test
+        python Satellite_Operations_Services_Optimizer/manage.py test Satellite_Operations_Services_Optimizer
