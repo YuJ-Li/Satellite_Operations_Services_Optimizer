@@ -8,7 +8,7 @@ class Satellite(models.Model):
     fieldOfView = models.FloatField() # in degrees
 
 class SatelliteSchedule(models.Model):
-    satellite = models.OneToOneField(Satellite, on_delete=models.DO_NOTHING)
+    satellite = models.OneToOneField(Satellite, on_delete=models.DO_NOTHING,related_name = "satelliteSchedule")
     scheduleID = models.CharField(max_length=50, unique=True)
     activityWindow = models.DateTimeField()
 
