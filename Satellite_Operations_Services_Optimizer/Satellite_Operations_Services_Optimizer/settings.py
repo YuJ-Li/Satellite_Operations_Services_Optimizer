@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME' : 'satellite_model',
         'USER' : 'root',
-        #'PASSWORD' : '12345678',
+        'PASSWORD' : '12345678',
         'PORT': 3306,
         'HOST':'127.0.0.1'
     }

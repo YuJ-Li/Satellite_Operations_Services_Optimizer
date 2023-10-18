@@ -8,7 +8,7 @@ class Satellite(models.Model):
     fieldOfView = models.FloatField() # in degrees
 
 class SatelliteSchedule(models.Model):
-    satellite = models.OneToOneField(Satellite, on_delete=models.DO_NOTHING,related_name = "satelliteSchedule")
+    satellite = models.OneToOneField(Satellite, on_delete=models.CASCADE,related_name = "satelliteSchedule")
     scheduleID = models.CharField(max_length=50, unique=True)
     activityWindow = models.DateTimeField()
 
@@ -24,21 +24,21 @@ class DownlinkTask(SatelliteTask):
     imageId = models.CharField(max_length=50, unique=False)
     downlinkStartTime = models.DateTimeField()
     downlinkEndTime = models.DateTimeField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='downlink_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='downlink_tasks')
 
 class MaintenanceTask(SatelliteTask):
     target = models.CharField(max_length=255)
     timeWindow = models.DateTimeField()
     duration = models.DurationField()  # Expects a datetime.timedelta instance
     payloadOperationAffected = models.BooleanField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='maintenance_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='maintenance_tasks')
 
 class ImagingTask(SatelliteTask):
     imagingRegionLatitude = models.FloatField()
     imagingRegionLongitude = models.FloatField()
     imagingTime = models.DateTimeField()
     deliveryTime = models.DateTimeField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='imaging_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='imaging_tasks')
 
 class GroundStation(models.Model):
     groundStationId = models.CharField(max_length=50, unique=True)
@@ -52,7 +52,7 @@ class GroundStation(models.Model):
 
 class GroundStationRequest(models.Model):
     stationName = models.CharField(max_length=100)
-    satellite = models.ForeignKey(Satellite, on_delete=models.DO_NOTHING, related_name='ground_station_requests')
+    satellite = models.ForeignKey(Satellite, on_delete=models.CASCADE, related_name='ground_station_requests')
     acquisitionOfSignal = models.DateTimeField()
     lossOfSignal = models.DateTimeField()
     satelliteScheduleId = models.CharField(max_length=50)
