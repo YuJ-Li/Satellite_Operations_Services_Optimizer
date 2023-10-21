@@ -2,9 +2,30 @@ version: '3.4'
 
 services:
   satelliteoperationsservicesoptimizer:
-    image: satelliteoperationsservicesoptimizer
+    image: soso
+    container_name: soso-container
     build:
       context: .
       dockerfile: ./Dockerfile
     ports:
       - 8000:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:5.7
+    container_name: db-container
+    environment:
+      MYSQL_DATABASE: 'satellite_model'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+    volumes:
+      - ./data/mysql/db:/var/lib/mysql
+    healthcheck:
+        test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+        interval: 30s
+        timeout: 10s
+
+
+  
