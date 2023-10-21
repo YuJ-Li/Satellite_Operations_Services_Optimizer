@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from .models import Satellite, SatelliteSchedule, ImagingTask
+from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
@@ -146,4 +146,110 @@ def delete_imagingTask_by_id(TaskID):
         it = ImagingTask.objects.get(TaskID = TaskID)
         it.delete()
     except ImagingTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')
+    
+#MaintenanceTask controller--------------------
+def add_maintenanceTask(TaskID, revisitFrequency, priority,target,timeWindow,duration,
+                        payloadOperationAffected,schedule):
+    try:
+        maintenanceTask = MaintenanceTask(
+            TaskID = TaskID,
+            revisitFrequency = revisitFrequency,
+            priority = priority,
+            target = target,
+            timeWindow = timeWindow,
+            duration = duration,
+            payloadOperationAffected = payloadOperationAffected,
+            schedule = schedule
+        )
+        maintenanceTask.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_maintenanceTask():
+    try:
+        return MaintenanceTask.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+def get_maintenanceTask_by_id(TaskID)->MaintenanceTask:
+    try:
+        it = MaintenanceTask.objects.get(TaskID = TaskID)
+        return it
+    except MaintenanceTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')
+    
+def updata_maintenanceTask_info(TaskID, revisitFrequency, priority,target,timeWindow,duration,
+                        payloadOperationAffected,schedule):
+    try:
+        mt = MaintenanceTask.objects.get(TaskID = TaskID)
+        mt.revisitFrequency = revisitFrequency
+        mt.priority = priority
+        mt.target = target
+        mt.timeWindow = timeWindow
+        mt.payloadOperationAffected = payloadOperationAffected
+        mt.duration = duration
+        mt.schedule = schedule
+        mt.save()
+    except MaintenanceTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+def delete_maintenanceTask_by_id(TaskID):
+    try:
+        it = MaintenanceTask.objects.get(TaskID = TaskID)
+        it.delete()
+    except MaintenanceTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')
+    
+#DownlinkTask controller--------------------
+def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
+    try:
+        downlinkTask = DownlinkTask(
+            TaskID = TaskID,
+            revisitFrequency = revisitFrequency,
+            priority = priority,
+            imageId = imageId,
+            downlinkStartTime = downlinkStartTime,
+            downlinkEndTime = downlinkEndTime,
+            schedule = schedule
+        )
+        DownlinkTask.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_downlinkTask():
+    try:
+        return DownlinkTask.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+def get_downlinkTask_by_id(TaskID)->DownlinkTask:
+    try:
+        it = DownlinkTask.objects.get(TaskID = TaskID)
+        return it
+    except DownlinkTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')
+    
+def updata_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
+    try:
+        dt = DownlinkTask.objects.get(TaskID = TaskID)
+        dt.revisitFrequency = revisitFrequency
+        dt.priority = priority
+        dt.imageId=imageId
+        dt.downlinkStartTime = downlinkStartTime
+        dt.downlinkEndTime = downlinkEndTime
+        dt.schedule = schedule
+        dt.save()
+    except DownlinkTask.DoesNotExist:
+        return HttpResponseBadRequest('task not found.')    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+def delete_downlinkTask_by_id(TaskID):
+    try:
+        it = DownlinkTask.objects.get(TaskID = TaskID)
+        it.delete()
+    except DownlinkTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
