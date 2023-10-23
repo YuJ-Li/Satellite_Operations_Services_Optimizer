@@ -14,10 +14,6 @@ jobs:
     services:
       satelliteoperationsservicesoptimizer:
         image: soso2023/soso:latest
-        container_name: soso-container
-        build:
-          context: Satellite_Operations_Services_Optimizer
-          dockerfile: Satellite_Operations_Services_Optimizer/Dockerfile
         ports:
           - 8000:8000
         command: python manage.py runserver 0.0.0.0:8000
@@ -26,7 +22,6 @@ jobs:
             condition: service_healthy
       db:
         image: mysql:5.7
-        container_name: db-container
         environment:
           MYSQL_DATABASE: 'satellite_model'
           MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
