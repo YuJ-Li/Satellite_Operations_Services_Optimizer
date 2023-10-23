@@ -1,0 +1,16 @@
+{
+	"name": "soso-dev-container",
+	"dockerComposeFile": "../docker-compose.yml",
+	"service": "satelliteoperationsservicesoptimizer",
+	"workspaceFolder": "/app",
+	"shutdownAction": "stopCompose",
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"ms-python.python"
+			]
+		}
+	}
+
+}
