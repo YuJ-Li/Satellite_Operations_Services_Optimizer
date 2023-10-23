@@ -12,14 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: myapp
+      satelliteoperationsservicesoptimizer:
+        image: soso2023/soso:latest
+        container_name: soso-container
+        build:
+          context: Satellite_Operations_Services_Optimizer
+          dockerfile: Satellite_Operations_Services_Optimizer/Dockerfile
         ports:
-          - '3306:3306'
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+          - 8000:8000
+        command: python manage.py runserver 0.0.0.0:8000
+        depends_on:
+          db:
+            condition: service_healthy
+      db:
+        image: mysql:5.7
+        container_name: db-container
+        environment:
+          MYSQL_DATABASE: 'satellite_model'
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+        volumes:
+          - ./data/mysql/db:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            interval: 30s
+            timeout: 10s
 
     strategy:
       max-parallel: 4
@@ -38,4 +54,4 @@ jobs:
         pip install -r Satellite_Operations_Services_Optimizer/requirements.txt
     - name: Run Tests
       run: |
-        python Satellite_Operations_Services_Optimizer/manage.py test Satellite_Operations_Services_Optimizer
+        python Satellite_Operations_Services_Optimizer/manage.py test 
