@@ -8,7 +8,7 @@ class Satellite(models.Model):
     fieldOfView = models.FloatField() # in degrees
 
 class SatelliteSchedule(models.Model):
-    satellite = models.OneToOneField(Satellite, on_delete=models.DO_NOTHING,related_name = "satelliteSchedule")
+    satellite = models.OneToOneField(Satellite, on_delete=models.CASCADE,related_name = "satelliteSchedule")
     scheduleID = models.CharField(max_length=50, unique=True)
     activityWindow = models.DateTimeField()
 
@@ -24,25 +24,25 @@ class DownlinkTask(SatelliteTask):
     imageId = models.CharField(max_length=50, unique=False)
     downlinkStartTime = models.DateTimeField()
     downlinkEndTime = models.DateTimeField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='downlink_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='downlink_tasks')
 
 class MaintenanceTask(SatelliteTask):
     target = models.CharField(max_length=255)
     timeWindow = models.DateTimeField()
     duration = models.DurationField()  # Expects a datetime.timedelta instance
     payloadOperationAffected = models.BooleanField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='maintenance_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='maintenance_tasks')
 
 class ImagingTask(SatelliteTask):
     imagingRegionLatitude = models.FloatField()
     imagingRegionLongitude = models.FloatField()
     imagingTime = models.DateTimeField()
     deliveryTime = models.DateTimeField()
-    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.DO_NOTHING, related_name='imaging_tasks')
+    schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='imaging_tasks')
 
 class GroundStation(models.Model):
     groundStationId = models.CharField(max_length=50, unique=True)
-    stationName = models.CharField(max_length=100)
+    stationName = models.CharField(max_length=100,unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     height = models.FloatField()  # assuming in meters
@@ -51,11 +51,11 @@ class GroundStation(models.Model):
     downlinkRate = models.FloatField()  # assuming in Mbps
 
 class GroundStationRequest(models.Model):
-    stationName = models.CharField(max_length=100)
-    satellite = models.ForeignKey(Satellite, on_delete=models.DO_NOTHING, related_name='ground_station_requests')
+    requestId = models.CharField(max_length=50, unique=True, default=None)
     acquisitionOfSignal = models.DateTimeField()
     lossOfSignal = models.DateTimeField()
-    satelliteScheduleId = models.CharField(max_length=50)
+    satelliteId = models.CharField(max_length=50)
+    groundStation= models.ForeignKey(GroundStation, on_delete=models.CASCADE, related_name='ground_station_requests',default=None)
 
 class Image(models.Model):
     IMAGE_TYPE_CHOICES = [
@@ -70,6 +70,7 @@ class Image(models.Model):
     imagingTask = models.ForeignKey(ImagingTask, on_delete=models.DO_NOTHING, related_name='images')
 
 class Outage(models.Model):
+    outageId = models.CharField(max_length=50, unique=True,default=None)
     startTime = models.DateTimeField()
     endTime = models.DateTimeField()
     #targets
