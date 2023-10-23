@@ -21,3 +21,18 @@
 
 ## Additional details
 For further details, please visit our [wiki page](https://github.com/YuJ-Li/Satellite_tasking_optimization/wiki)
+
+## Open the this project in dev container
+Open the `Satellite_Operations_Services_Optimizer/Satellite_Operations_Services_Optimizer` folder in VSCode. While making sure Docker is running, `CTRL+SHIFT+P` and search for `Dev Containers: Rebuild and Reopen in Container`.
+
+Wait for the container to open, then access the application at http://localhost:8000/. In the bash shell of the container, run the following command to migrate data:
+
+```
+python manage.py migrate
+```
+
+To run tests, use
+
+```
+python manage.py test <test-module>
+```
