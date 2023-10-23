@@ -14,7 +14,7 @@ jobs:
     services:
       db:
         image: mysql:5.7
-        environment:
+        env:
           MYSQL_DATABASE: 'satellite_model'
           MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
         volumes:
