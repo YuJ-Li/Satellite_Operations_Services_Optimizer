@@ -51,11 +51,11 @@ class GroundStation(models.Model):
     downlinkRate = models.FloatField()  # assuming in Mbps
 
 class GroundStationRequest(models.Model):
-    requestId = models.CharField(max_length=50, unique=True)
+    requestId = models.CharField(max_length=50, unique=True, default=None)
     acquisitionOfSignal = models.DateTimeField()
     lossOfSignal = models.DateTimeField()
     satelliteId = models.CharField(max_length=50)
-    groundStation= models.ForeignKey(GroundStation, on_delete=models.CASCADE, related_name='ground_station_requests')
+    groundStation= models.ForeignKey(GroundStation, on_delete=models.CASCADE, related_name='ground_station_requests',default=None)
 
 class Image(models.Model):
     IMAGE_TYPE_CHOICES = [
@@ -70,7 +70,7 @@ class Image(models.Model):
     imagingTask = models.ForeignKey(ImagingTask, on_delete=models.DO_NOTHING, related_name='images')
 
 class Outage(models.Model):
-    outageId = models.CharField(max_length=50, unique=True)
+    outageId = models.CharField(max_length=50, unique=True,default=None)
     startTime = models.DateTimeField()
     endTime = models.DateTimeField()
     #targets

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask,GroundStation, GroundStationRequest, Image, Outage
+from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask,GroundStation, GroundStationRequest, Image, Outage, SatelliteTask
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
@@ -76,7 +76,7 @@ def get_satelliteSchedule_by_id(scheduleId)->SatelliteSchedule:
 
 def update_satelliteSchedule_info(scheduleId, activityWindow, satellite):
     try:
-        satelliteSchedule = SatelliteSchedule.objects.get(scheduleId)
+        satelliteSchedule = SatelliteSchedule.objects.get(scheduleID=scheduleId)
         satelliteSchedule.scheduleID = satelliteSchedule.scheduleID
         satelliteSchedule.activityWindow = activityWindow
         satelliteSchedule.satellite = satellite
@@ -215,7 +215,7 @@ def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,downlinkStar
             downlinkEndTime = downlinkEndTime,
             schedule = schedule
         )
-        DownlinkTask.save()
+        downlinkTask.save()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -232,7 +232,7 @@ def get_downlinkTask_by_id(TaskID)->DownlinkTask:
     except DownlinkTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
     
-def updata_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
+def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
     try:
         dt = DownlinkTask.objects.get(TaskID = TaskID)
         dt.revisitFrequency = revisitFrequency
@@ -368,7 +368,7 @@ def add_image(imageId,imageSize,imageType,groundStationRequest,imagingTask):
 
 def get_all_images():
     try:
-        return Satellite.objects.all()
+        return Image.objects.all()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
