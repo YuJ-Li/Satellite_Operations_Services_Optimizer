@@ -70,6 +70,7 @@ class Image(models.Model):
     imagingTask = models.ForeignKey(ImagingTask, on_delete=models.DO_NOTHING, related_name='images')
 
 class Outage(models.Model):
+    outageId = models.CharField(max_length=50, unique=True)
     startTime = models.DateTimeField()
     endTime = models.DateTimeField()
     #targets

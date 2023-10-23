@@ -281,7 +281,7 @@ def get_groundStation_by_id(groundStationId) -> GroundStation:
         groundStation = GroundStation.objects.get(groundStationId =groundStationId)
         return groundStation
     except ObjectDoesNotExist:
-        return HttpResponseBadRequest('satellite not found.')
+        return HttpResponseBadRequest('groundStation not found.')
 
 def update_groundStation_info(groundStationId, stationName, latitude,longitude ,height,stationMask,uplinkRate,downlinkRate):
     try:
@@ -296,7 +296,7 @@ def update_groundStation_info(groundStationId, stationName, latitude,longitude ,
         groundStation.downlinkRate = downlinkRate
         groundStation.save()
     except ObjectDoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
+        return HttpResponseBadRequest('groundStation not found.')
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -304,8 +304,8 @@ def delete_groundStation_by_id(groundStationId):
     try:
         groundStation = GroundStation.objects.get(groundStationId =groundStationId)
         groundStation.delete()
-    except Satellite.DoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('groundStation not found.')
 
 #groundStationRequest controller--------------------
 def add_groundStationRequest(requestId,acquisitionOfSignal,lossOfSignal,satelliteId,groundStation):
@@ -332,26 +332,114 @@ def get_groundStationRequest_by_id(requestId) -> GroundStationRequest:
         request = GroundStationRequest.objects.get(requestId = requestId)
         return request
     except ObjectDoesNotExist:
-        return HttpResponseBadRequest('satellite not found.')
+        return HttpResponseBadRequest('groundStationRequest not found.')
 
-def update_satellite_info(satellite_id,TLE, storageCapacity, powerCapacity, fieldOfView):
+def update_groundStationRequest_info(requestId,acquisitionOfSignal,lossOfSignal,satelliteId,groundStation):
     try:
-        satellite = Satellite.objects.get(satelliteId=satellite_id)
-        satellite.satelliteId = satellite.satelliteId
-        satellite.TLE = TLE
-        satellite.storageCapacity = storageCapacity
-        satellite.powerCapacity = powerCapacity
-        satellite.fieldOfView = fieldOfView
-        # satellite.satelliteSchedule = satelliteSchedule
-        satellite.save()
+        groundStationRequest = GroundStationRequest.objects.get(requestId=requestId)
+        groundStationRequest.acquisitionOfSignal = acquisitionOfSignal
+        groundStationRequest.lossOfSignal = lossOfSignal
+        groundStationRequest.satelliteId = satelliteId
+        groundStationRequest.groundStation = groundStation
+        groundStationRequest.save()
     except ObjectDoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
+        return HttpResponseBadRequest('groundStationRequest not found.')
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-def delete_satellite_by_id(satellite_id):
+def delete_groundStationRequest_by_id(requestId):
     try:
-        satellite = Satellite.objects.get(satelliteId=satellite_id)
-        satellite.delete()
-    except Satellite.DoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
+        groundStationRequest = GroundStationRequest.objects.get(requestId = requestId)
+        groundStationRequest.delete()
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('groundStationRequest not found.')
+
+#image controller--------------------
+def add_image(imageId,imageSize,imageType,groundStationRequest,imagingTask):
+    try:
+        image = Image(imageId= imageId,
+                      imageSize = imageSize,
+                      imageType = imageType,
+                      groundStationRequest = groundStationRequest,
+                      imagingTask = imagingTask)
+        image.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_images():
+    try:
+        return Satellite.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_image_by_id(imageId) -> Image:
+    try:
+        image = Image.objects.get(imageId=imageId)
+        return image
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('image not found.')
+
+def update_image_info(imageId,imageSize,imageType,groundStationRequest,imagingTask):
+    try:
+        image = Image.objects.get(imageId=imageId)
+        image.imageSize = imageSize
+        image.imageType = imageType
+        image.groundStationRequest = groundStationRequest
+        image.imagingTask = imagingTask
+        image.save()
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('image not found.')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def delete_image_by_id(imageId):
+    try:
+        image = Image.objects.get(imageId=imageId)
+        image.delete()
+    except Image.DoesNotExist:
+        return HttpResponseBadRequest('image not found.')
+    
+#Outage controller-------------------
+def add_outage(outageId,startTime,endTime,groundStation,satellite):
+    try:
+        outage = Outage(outageId=outageId,
+                        startTime=startTime,
+                        endTime=endTime,
+                        groundStation=groundStation,
+                        satellite=satellite)
+        outage.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_outage():
+    try:
+        return Outage.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_outage_by_id(outageId) -> Outage:
+    try:
+        outage = Outage.objects.get(outageId=outageId)
+        return outage
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('outage not found.')
+
+def update_outage_info(outageId,startTime,endTime,groundStation,satellite):
+    try:
+        outage = Outage.objects.get(outageId=outageId)
+        outage.startTime = startTime
+        outage.endTime = endTime
+        outage.groundStation = groundStation
+        outage.satellite = satellite
+        outage.save()
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('outage not found.')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def delete_outage_by_id(outageId):
+    try:
+        outage = Outage.objects.get(outageId=outageId)
+        outage.delete()
+    except Outage.DoesNotExist:
+        return HttpResponseBadRequest('outage not found.')
