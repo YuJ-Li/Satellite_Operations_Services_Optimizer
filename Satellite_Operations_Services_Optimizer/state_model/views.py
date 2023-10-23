@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask
+from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask,GroundStation, GroundStationRequest, Image, Outage
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
@@ -253,3 +253,105 @@ def delete_downlinkTask_by_id(TaskID):
         it.delete()
     except DownlinkTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
+
+
+#groundStation controller--------------------
+def add_groundStation(groundStationId, stationName, latitude,longitude ,height,stationMask,uplinkRate,downlinkRate):
+    try:
+        new_groundStation = GroundStation(groundStationId=groundStationId,
+                                stationName=stationName,
+                                latitude =latitude,
+                                longitude=longitude,
+                                height=height,
+                                stationMask=stationMask,
+                                uplinkRate = uplinkRate,
+                                downlinkRate = downlinkRate)
+        new_groundStation.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_groundStations():
+    try:
+        return GroundStation.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_groundStation_by_id(groundStationId) -> GroundStation:
+    try:
+        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
+        return groundStation
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('satellite not found.')
+
+def update_groundStation_info(groundStationId, stationName, latitude,longitude ,height,stationMask,uplinkRate,downlinkRate):
+    try:
+        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
+        groundStation.groundStationId =groundStationId
+        groundStation.stationName = stationName
+        groundStation.latitude = latitude
+        groundStation.longitude = longitude
+        groundStation.height = height
+        groundStation.stationMask = stationMask
+        groundStation.uplinkRate = uplinkRate
+        groundStation.downlinkRate = downlinkRate
+        groundStation.save()
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('Satellite not found.')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def delete_groundStation_by_id(groundStationId):
+    try:
+        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
+        groundStation.delete()
+    except Satellite.DoesNotExist:
+        return HttpResponseBadRequest('Satellite not found.')
+
+#groundStationRequest controller--------------------
+def add_groundStationRequest(requestId,acquisitionOfSignal,lossOfSignal,satelliteId,groundStation):
+    try:
+        new_groundStationRequest = GroundStationRequest(
+            requestId = requestId,
+            acquisitionOfSignal = acquisitionOfSignal,
+            lossOfSignal = lossOfSignal,
+            satelliteId = satelliteId,
+            groundStation = groundStation
+        )
+        new_groundStationRequest.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_all_groundStationRequest():
+    try:
+        return GroundStationRequest.objects.all()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_groundStationRequest_by_id(requestId) -> GroundStationRequest:
+    try:
+        request = GroundStationRequest.objects.get(requestId = requestId)
+        return request
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('satellite not found.')
+
+def update_satellite_info(satellite_id,TLE, storageCapacity, powerCapacity, fieldOfView):
+    try:
+        satellite = Satellite.objects.get(satelliteId=satellite_id)
+        satellite.satelliteId = satellite.satelliteId
+        satellite.TLE = TLE
+        satellite.storageCapacity = storageCapacity
+        satellite.powerCapacity = powerCapacity
+        satellite.fieldOfView = fieldOfView
+        # satellite.satelliteSchedule = satelliteSchedule
+        satellite.save()
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest('Satellite not found.')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def delete_satellite_by_id(satellite_id):
+    try:
+        satellite = Satellite.objects.get(satelliteId=satellite_id)
+        satellite.delete()
+    except Satellite.DoesNotExist:
+        return HttpResponseBadRequest('Satellite not found.')

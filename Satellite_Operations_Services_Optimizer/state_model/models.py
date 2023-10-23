@@ -42,7 +42,7 @@ class ImagingTask(SatelliteTask):
 
 class GroundStation(models.Model):
     groundStationId = models.CharField(max_length=50, unique=True)
-    stationName = models.CharField(max_length=100)
+    stationName = models.CharField(max_length=100,unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     height = models.FloatField()  # assuming in meters
@@ -51,11 +51,11 @@ class GroundStation(models.Model):
     downlinkRate = models.FloatField()  # assuming in Mbps
 
 class GroundStationRequest(models.Model):
-    stationName = models.CharField(max_length=100)
-    satellite = models.ForeignKey(Satellite, on_delete=models.CASCADE, related_name='ground_station_requests')
+    requestId = models.CharField(max_length=50, unique=True)
     acquisitionOfSignal = models.DateTimeField()
     lossOfSignal = models.DateTimeField()
-    satelliteScheduleId = models.CharField(max_length=50)
+    satelliteId = models.CharField(max_length=50)
+    groundStation= models.ForeignKey(GroundStation, on_delete=models.CASCADE, related_name='ground_station_requests')
 
 class Image(models.Model):
     IMAGE_TYPE_CHOICES = [
