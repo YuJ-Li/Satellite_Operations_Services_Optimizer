@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   satelliteoperationsservicesoptimizer:
-    image: soso
+    image: soso2023/soso:latest
     container_name: soso-container
     build:
       context: .
