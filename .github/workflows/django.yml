@@ -25,6 +25,7 @@ jobs:
         image: soso2023/soso:latest
         ports:
           - 8000:8000
+        options: --user root
 
 
     strategy:
