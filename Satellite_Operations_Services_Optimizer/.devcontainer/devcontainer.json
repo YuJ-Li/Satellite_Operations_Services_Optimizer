@@ -1,5 +1,5 @@
 {
-	"name": "soso-dev-container",
+	"name": "soso-fake-dev-container",
 	"dockerComposeFile": "../docker-compose.yml",
 	"service": "satelliteoperationsservicesoptimizer",
 	"workspaceFolder": "/app",
