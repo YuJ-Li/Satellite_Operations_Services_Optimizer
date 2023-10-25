@@ -8,8 +8,8 @@ services:
       context: .
       dockerfile: ./Dockerfile
     ports:
-      - 8000:8000
-    command: python ./Satellite_Operations_Services_Optimizer/manage.py runserver 0.0.0.0:8000
+      - 7000:7000
+    command: python ./Satellite_Operations_Services_Optimizer/manage.py runserver 0.0.0.0:7000
     volumes:
       - .:/app
     depends_on:
