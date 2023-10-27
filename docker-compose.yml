@@ -3,13 +3,15 @@ version: '3.4'
 services:
   satelliteoperationsservicesoptimizer:
     image: soso2023/soso:latest
-    container_name: soso-container
+    container_name: soso-dev-container
     build:
       context: .
       dockerfile: ./Dockerfile
     ports:
-      - 8000:8000
-    command: python manage.py runserver 0.0.0.0:8000
+      - 7000:7000
+    command: python ./Satellite_Operations_Services_Optimizer/manage.py runserver 0.0.0.0:7000
+    volumes:
+      - .:/app
     depends_on:
       db:
         condition: service_healthy
@@ -17,7 +19,7 @@ services:
   db:
     platform: linux/x86_64
     image: mysql:5.7
-    container_name: db-container
+    container_name: db-dev-container
     environment:
       MYSQL_DATABASE: 'satellite_model'
       MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
