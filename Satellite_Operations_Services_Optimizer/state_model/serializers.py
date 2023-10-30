@@ -4,44 +4,44 @@ from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, D
 class SatelliteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Satellite
-        fields = '_all_'
+        fields = '__all__'
 
 class SatelliteScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SatelliteSchedule
-        fields = '_all_'
+        fields = '__all__'
 
 class ImagingTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImagingTask
-        fields = '_all_'
+        fields = '__all__'
 
 class MaintenanceTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceTask
-        fields = '_all_'
+        fields = '__all__'
 
 class DownlinkTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = DownlinkTask
-        fields = '_all_'
+        fields = '__all__'
 
 class GroundStationSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroundStation
-        fields = '_all_'
+        fields = '__all__'
 
 class GroundStationRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroundStationRequest
-        fields = '_all_'
+        fields = '__all__'
     
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = '_all_'
+        fields = '__all__'
 
 class OutageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Outage
-        fields = '_all_'
+        fields = '__all__'
