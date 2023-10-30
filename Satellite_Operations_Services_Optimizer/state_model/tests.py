@@ -1,7 +1,7 @@
 from django.utils import timezone
 from datetime import datetime
 from django.test import TestCase
-from .views import *
+from .repositories import *
 from .models import Satellite, SatelliteSchedule
 from datetime import timedelta
 

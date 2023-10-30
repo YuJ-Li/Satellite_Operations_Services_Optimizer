@@ -5,3 +5,4 @@ sqlparse==0.4.4
 typing_extensions==4.8.0
 mysqlclient>=2.0
 skyfield
+djangorestframework==3.14.0
