@@ -66,9 +66,9 @@ def satellite_schedule_list(request):
 
     elif request.method == 'POST':
 
-        satellite_id = request.data.get('satellite')
-        if not Satellite.objects.filter(satelliteId=satellite_id).exists():
-            return JsonResponse({'error': 'Satellite not found'}, status=400)
+        # satellite_id = request.data.get('satellite')
+        # if not Satellite.objects.filter(satelliteId=satellite_id).exists():
+        #     return JsonResponse({'error': 'Satellite not found'}, status=400)
 
         serializer = SatelliteScheduleSerializer(data=request.data)
         if serializer.is_valid():
