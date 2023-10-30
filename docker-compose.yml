@@ -29,6 +29,7 @@ services:
         test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
         interval: 30s
         timeout: 10s
-
+    ports:
+      - 3306:3306
 
   
