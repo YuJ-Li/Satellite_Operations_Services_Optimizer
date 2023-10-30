@@ -1,7 +1,7 @@
 from django.db import models
 
 class Satellite(models.Model):
-    satelliteId = models.CharField(max_length=50, unique=True,primary_key=True,default=True)
+    satelliteId = models.CharField(max_length=50, unique=True)
     TLE = models.TextField() # Two-Line Element Set Format
     storageCapacity = models.FloatField() # in KB
     powerCapacity = models.FloatField() # in kWh
@@ -9,11 +9,11 @@ class Satellite(models.Model):
 
 class SatelliteSchedule(models.Model):
     satellite = models.OneToOneField(Satellite, on_delete=models.CASCADE,related_name = "satelliteSchedule")
-    scheduleID = models.CharField(max_length=50, unique=True,primary_key=True,default=True)
+    scheduleID = models.CharField(max_length=50, unique=True)
     activityWindow = models.DateTimeField()
 
 class SatelliteTask(models.Model):
-    TaskID = models.CharField(max_length=50, unique=True,primary_key=True,default=True)
+    TaskID = models.CharField(max_length=50, unique=True)
     revisitFrequency = models.PositiveIntegerField()  # In some time unit (e.g., hours, days)
     priority = models.PositiveIntegerField()  # Assuming some integer representation
 
@@ -41,7 +41,7 @@ class ImagingTask(SatelliteTask):
     schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='imaging_tasks')
 
 class GroundStation(models.Model):
-    groundStationId = models.CharField(max_length=50, unique=True,default=True)
+    groundStationId = models.CharField(max_length=50, unique=True)
     stationName = models.CharField(max_length=100,unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -51,7 +51,7 @@ class GroundStation(models.Model):
     downlinkRate = models.FloatField()  # assuming in Mbps
 
 class GroundStationRequest(models.Model):
-    requestId = models.CharField(max_length=50, unique=True, primary_key=True,default=True)
+    requestId = models.CharField(max_length=50, unique=True, default=None)
     acquisitionOfSignal = models.DateTimeField()
     lossOfSignal = models.DateTimeField()
     satelliteId = models.CharField(max_length=50)
@@ -63,14 +63,14 @@ class Image(models.Model):
         ('MR', 'Medium Resolution'),
         ('LR', 'Low Resolution'),
     ]
-    imageId = models.CharField(max_length=50, unique=True,primary_key=True,default=True)
+    imageId = models.CharField(max_length=50, unique=True)
     imageSize = models.PositiveIntegerField() # in KB
     imageType = models.CharField(max_length=2, choices=IMAGE_TYPE_CHOICES)
     groundStationRequest = models.ForeignKey(GroundStationRequest, on_delete=models.DO_NOTHING, related_name='images')
     imagingTask = models.ForeignKey(ImagingTask, on_delete=models.DO_NOTHING, related_name='images')
 
 class Outage(models.Model):
-    outageId = models.CharField(max_length=50, unique=True,primary_key=True,default=True)
+    outageId = models.CharField(max_length=50, unique=True,default=None)
     startTime = models.DateTimeField()
     endTime = models.DateTimeField()
     #targets
