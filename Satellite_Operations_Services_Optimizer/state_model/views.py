@@ -1,445 +1,430 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect,Http404
 from django.urls import reverse
 from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask,GroundStation, GroundStationRequest, Image, Outage, SatelliteTask
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import generics
+from .serializers import *
+from rest_framework import status
+from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
-#satellite controller--------------------
-def add_satellite(satelliteId, TLE, storageCapacity, powerCapacity, fieldOfView):
-    try:
-        new_satellite = Satellite(satelliteId=satelliteId,
-                                TLE=TLE,
-                                storageCapacity=storageCapacity,
-                                powerCapacity=powerCapacity,
-                                fieldOfView=fieldOfView)
-        new_satellite.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#test restAPI-----------------------------------------
+@api_view(['GET'])
+def getData(request):
+    person = {'name':'kai','age':28}
+    return Response(person)
+#satellite restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def satellite_list(request):
+    if request.method == 'GET':
+        satellites = Satellite.objects.all()
+        serializer = SatelliteSerializer(satellites, many=True)
+        return Response(serializer.data)
 
-def get_all_satellites():
-    try:
-        return Satellite.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
+        serializer = SatelliteSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-def get_satellite_by_id(satellite_id) -> Satellite:
-    try:
-        satellite = Satellite.objects.get(satelliteId=satellite_id)
-        return satellite
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('satellite not found.')
-
-def update_satellite_info(satellite_id,TLE, storageCapacity, powerCapacity, fieldOfView):
-    try:
-        satellite = Satellite.objects.get(satelliteId=satellite_id)
-        satellite.satelliteId = satellite.satelliteId
-        satellite.TLE = TLE
-        satellite.storageCapacity = storageCapacity
-        satellite.powerCapacity = powerCapacity
-        satellite.fieldOfView = fieldOfView
-        # satellite.satelliteSchedule = satelliteSchedule
-        satellite.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-def delete_satellite_by_id(satellite_id):
+@api_view(['GET', 'PUT', 'DELETE'])
+def satellite_detail(request, satellite_id):
     try:
         satellite = Satellite.objects.get(satelliteId=satellite_id)
-        satellite.delete()
+
+        # For GET requests
+        if request.method == 'GET':
+            serializer = SatelliteSerializer(satellite)
+            return JsonResponse(serializer.data)
+
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = SatelliteSerializer(satellite, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+        elif request.method == 'DELETE':
+            satellite.delete()
+            return HttpResponse(status=204)  # 204 No Content is typically returned for successful DELETE requests.
+
     except Satellite.DoesNotExist:
-        return HttpResponseBadRequest('Satellite not found.')
+        raise Http404("Satellite not found")
+    
+#satelliteScedule restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def satellite_schedule_list(request):
+    if request.method == 'GET':
+        schedules = SatelliteSchedule.objects.all()
+        serializer = SatelliteScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
 
-#satelliteSchedule controller---------------
-def add_SatelliteSchedule(scheduleId, activityWindow, satellite):
-    try:
-        satelliteSchedule = SatelliteSchedule(scheduleID = scheduleId, activityWindow = activityWindow, satellite = satellite)
-        satelliteSchedule.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
- 
-def get_all_satelliteSchedules():
-    try:
-        return SatelliteSchedule.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
 
-def get_satelliteSchedule_by_id(scheduleId)->SatelliteSchedule:
+        satellite_id = request.data.get('satellite')
+        if not Satellite.objects.filter(id=satellite_id).exists():
+            return JsonResponse({'error': 'Satellite not found'}, status=400)
+
+        serializer = SatelliteScheduleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def satellite_schedule_detail(request, schedule_id):
     try:
-        return SatelliteSchedule.objects.get(scheduleID  = scheduleId)
+        schedule = SatelliteSchedule.objects.get(scheduleID=schedule_id)
+
+        # For GET requests
+        if request.method == 'GET':
+            serializer = SatelliteScheduleSerializer(schedule)
+            return JsonResponse(serializer.data)
+
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = SatelliteScheduleSerializer(schedule, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            schedule.delete()
+            return HttpResponse(status=204)
+
     except SatelliteSchedule.DoesNotExist:
-        return HttpResponseBadRequest('SatelliteSchedule not found.')
+        raise Http404("Schedule not found")
+#imaging task restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def imaging_task_list(request):
+    if request.method == 'GET':
+        tasks = ImagingTask.objects.all()
+        serializer = ImagingTaskSerializer(tasks, many=True)
+        return Response(serializer.data)
 
-def update_satelliteSchedule_info(scheduleId, activityWindow, satellite):
-    try:
-        satelliteSchedule = SatelliteSchedule.objects.get(scheduleID=scheduleId)
-        satelliteSchedule.scheduleID = satelliteSchedule.scheduleID
-        satelliteSchedule.activityWindow = activityWindow
-        satelliteSchedule.satellite = satellite
-        satelliteSchedule.save()
-    except SatelliteSchedule.DoesNotExist:
-        return HttpResponseBadRequest('SatelliteSchedule not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
 
-def delete_satelliteSchedule_by_id(scheduleId):
-    try:
-        satelliteSchedule = SatelliteSchedule.objects.get(scheduleID = scheduleId)
-        satelliteSchedule.delete()
-    except satelliteSchedule.DoesNotExist:
-        pass
+        schedule_id = request.data.get('schedule')
+        if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
+            return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
 
-#imageTask controller--------------------
-def add_imagingTask(TaskID, revisitFrequency, priority,imagingRegionLatitude,
-                    imagingRegionLongitude,imagingTime,deliveryTime,schedule):
-    try:
-        imagingTask = ImagingTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
-            priority = priority,
-            imagingRegionLatitude = imagingRegionLatitude,
-            imagingRegionLongitude = imagingRegionLongitude,
-            imagingTime = imagingTime,
-            deliveryTime = deliveryTime,
-            schedule = schedule
-        )
-        imagingTask.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-def get_all_imagingTask():
-    try:
-        return ImagingTask.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        serializer = ImagingTaskSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-def get_imagingTask_by_id(TaskID)->ImagingTask:
+@api_view(['GET', 'PUT', 'DELETE'])
+def imaging_task_detail(request, task_id):
     try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
-        return it
+        task = ImagingTask.objects.get(TaskID=task_id)
+
+        # For GET requests
+        if request.method == 'GET':
+            serializer = ImagingTaskSerializer(task)
+            return JsonResponse(serializer.data)
+
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = ImagingTaskSerializer(task, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            task.delete()
+            return HttpResponse(status=204)
+
     except ImagingTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
-    
-def updata_imagingTask_info(TaskID, revisitFrequency, priority,imagingRegionLatitude,
-                    imagingRegionLongitude,imagingTime,deliveryTime,schedule):
-    try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
-        it.revisitFrequency = revisitFrequency
-        it.priority = priority
-        it.imagingRegionLatitude = imagingRegionLatitude
-        it.imagingRegionLongitude = imagingRegionLongitude
-        it.imagingTime = imagingTime
-        it.deliveryTime = deliveryTime
-        it.schedule = schedule
-        it.save()
-    except ImagingTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-def delete_imagingTask_by_id(TaskID):
-    try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
-        it.delete()
-    except ImagingTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
-    
-#MaintenanceTask controller--------------------
-def add_maintenanceTask(TaskID, revisitFrequency, priority,target,timeWindow,duration,
-                        payloadOperationAffected,schedule):
-    try:
-        maintenanceTask = MaintenanceTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
-            priority = priority,
-            target = target,
-            timeWindow = timeWindow,
-            duration = duration,
-            payloadOperationAffected = payloadOperationAffected,
-            schedule = schedule
-        )
-        maintenanceTask.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        raise Http404("imagetask not found")
 
-def get_all_maintenanceTask():
-    try:
-        return MaintenanceTask.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-def get_maintenanceTask_by_id(TaskID)->MaintenanceTask:
-    try:
-        it = MaintenanceTask.objects.get(TaskID = TaskID)
-        return it
-    except MaintenanceTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
-    
-def updata_maintenanceTask_info(TaskID, revisitFrequency, priority,target,timeWindow,duration,
-                        payloadOperationAffected,schedule):
-    try:
-        mt = MaintenanceTask.objects.get(TaskID = TaskID)
-        mt.revisitFrequency = revisitFrequency
-        mt.priority = priority
-        mt.target = target
-        mt.timeWindow = timeWindow
-        mt.payloadOperationAffected = payloadOperationAffected
-        mt.duration = duration
-        mt.schedule = schedule
-        mt.save()
-    except MaintenanceTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
-def delete_maintenanceTask_by_id(TaskID):
-    try:
-        it = MaintenanceTask.objects.get(TaskID = TaskID)
-        it.delete()
-    except MaintenanceTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
-    
-#DownlinkTask controller--------------------
-def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
-    try:
-        downlinkTask = DownlinkTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
-            priority = priority,
-            imageId = imageId,
-            downlinkStartTime = downlinkStartTime,
-            downlinkEndTime = downlinkEndTime,
-            schedule = schedule
-        )
-        downlinkTask.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#downlink task restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def downlink_task_list(request):
+    if request.method == 'GET':
+        tasks = DownlinkTask.objects.all()
+        serializer = DownlinkTaskSerializer(tasks, many=True)
+        return Response(serializer.data)
 
-def get_all_downlinkTask():
-    try:
-        return DownlinkTask.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
+
+        schedule_id = request.data.get('schedule')
+        if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
+            return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
+
+        serializer = DownlinkTaskSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-def get_downlinkTask_by_id(TaskID)->DownlinkTask:
+@api_view(['GET', 'PUT', 'DELETE'])
+def downlink_task_detail(request, task_id):
     try:
-        it = DownlinkTask.objects.get(TaskID = TaskID)
-        return it
+        task = DownlinkTask.objects.get(TaskID=task_id)
+
+        # For GET requests
+        if request.method == 'GET':
+            serializer = DownlinkTaskSerializer(task)
+            return JsonResponse(serializer.data)
+
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = DownlinkTaskSerializer(task, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            task.delete()
+            return HttpResponse(status=204)
+
     except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
+        raise Http404("downlink task not found")
     
-def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
-    try:
-        dt = DownlinkTask.objects.get(TaskID = TaskID)
-        dt.revisitFrequency = revisitFrequency
-        dt.priority = priority
-        dt.imageId=imageId
-        dt.downlinkStartTime = downlinkStartTime
-        dt.downlinkEndTime = downlinkEndTime
-        dt.schedule = schedule
-        dt.save()
-    except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#MaintenanceTask restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def maintenance_task_list(request):
+    if request.method == 'GET':
+        tasks = MaintenanceTask.objects.all()
+        serializer = MaintenanceTaskSerializer(tasks, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        schedule_id = request.data.get('schedule')
+        if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
+            return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
+
+        serializer = MaintenanceTaskSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-def delete_downlinkTask_by_id(TaskID):
+@api_view(['GET', 'PUT', 'DELETE'])
+def maintenance_task_detail(request, task_id):
     try:
-        it = DownlinkTask.objects.get(TaskID = TaskID)
-        it.delete()
-    except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
+        task = MaintenanceTask.objects.get(TaskID=task_id)
 
+        # For GET requests
+        if request.method == 'GET':
+            serializer = MaintenanceTaskSerializer(task)
+            return JsonResponse(serializer.data)
 
-#groundStation controller--------------------
-def add_groundStation(groundStationId, stationName, latitude,longitude ,height,stationMask,uplinkRate,downlinkRate):
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = MaintenanceTaskSerializer(task, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            task.delete()
+            return HttpResponse(status=204)
+
+    except MaintenanceTask.DoesNotExist:
+        raise Http404("downlink task not found")
+    
+#ground satation restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def ground_station_list(request):
+    if request.method == 'GET':
+        groundStations = GroundStation.objects.all()
+        serializer = GroundStationSerializer(groundStations, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = GroundStationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+def ground_station_detail(request, station_id):
     try:
-        new_groundStation = GroundStation(groundStationId=groundStationId,
-                                stationName=stationName,
-                                latitude =latitude,
-                                longitude=longitude,
-                                height=height,
-                                stationMask=stationMask,
-                                uplinkRate = uplinkRate,
-                                downlinkRate = downlinkRate)
-        new_groundStation.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        groundStation = GroundStation.objects.get(groundStationId = station_id)
 
-def get_all_groundStations():
-    try:
-        return GroundStation.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # For GET requests
+        if request.method == 'GET':
+            serializer = GroundStationSerializer(groundStation)
+            return JsonResponse(serializer.data)
 
-def get_groundStation_by_id(groundStationId) -> GroundStation:
-    try:
-        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
-        return groundStation
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStation not found.')
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = GroundStationSerializer(groundStation, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
 
-def update_groundStation_info(groundStationId, stationName, latitude,longitude ,height,stationMask,uplinkRate,downlinkRate):
-    try:
-        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
-        groundStation.groundStationId =groundStationId
-        groundStation.stationName = stationName
-        groundStation.latitude = latitude
-        groundStation.longitude = longitude
-        groundStation.height = height
-        groundStation.stationMask = stationMask
-        groundStation.uplinkRate = uplinkRate
-        groundStation.downlinkRate = downlinkRate
-        groundStation.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStation not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            groundStation.delete()
+            return HttpResponse(status=204)
 
-def delete_groundStation_by_id(groundStationId):
-    try:
-        groundStation = GroundStation.objects.get(groundStationId =groundStationId)
-        groundStation.delete()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStation not found.')
+    except GroundStation.DoesNotExist:
+        raise Http404("groundstation not found")
+    
+#ground satation request restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def ground_station_request_list(request):
+    if request.method == 'GET':
+        groundStationRequests = GroundStationRequest.objects.all()
+        serializer = GroundStationRequestSerializer(groundStationRequests, many=True)
+        return Response(serializer.data)
 
-#groundStationRequest controller--------------------
-def add_groundStationRequest(requestId,acquisitionOfSignal,lossOfSignal,satelliteId,groundStation):
+    elif request.method == 'POST':
+        serializer = GroundStationRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+def ground_station_request_detail(request, stationRequest_id):
     try:
-        new_groundStationRequest = GroundStationRequest(
-            requestId = requestId,
-            acquisitionOfSignal = acquisitionOfSignal,
-            lossOfSignal = lossOfSignal,
-            satelliteId = satelliteId,
-            groundStation = groundStation
-        )
-        new_groundStationRequest.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        groundStationRequest = GroundStationRequest.objects.get(requestId = stationRequest_id)
 
-def get_all_groundStationRequest():
-    try:
-        return GroundStationRequest.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # For GET requests
+        if request.method == 'GET':
+            serializer = GroundStationRequestSerializer(groundStationRequest)
+            return JsonResponse(serializer.data)
 
-def get_groundStationRequest_by_id(requestId) -> GroundStationRequest:
-    try:
-        request = GroundStationRequest.objects.get(requestId = requestId)
-        return request
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStationRequest not found.')
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = GroundStationRequestSerializer(groundStationRequest, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
 
-def update_groundStationRequest_info(requestId,acquisitionOfSignal,lossOfSignal,satelliteId,groundStation):
-    try:
-        groundStationRequest = GroundStationRequest.objects.get(requestId=requestId)
-        groundStationRequest.acquisitionOfSignal = acquisitionOfSignal
-        groundStationRequest.lossOfSignal = lossOfSignal
-        groundStationRequest.satelliteId = satelliteId
-        groundStationRequest.groundStation = groundStation
-        groundStationRequest.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStationRequest not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            groundStationRequest.delete()
+            return HttpResponse(status=204)
 
-def delete_groundStationRequest_by_id(requestId):
-    try:
-        groundStationRequest = GroundStationRequest.objects.get(requestId = requestId)
-        groundStationRequest.delete()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('groundStationRequest not found.')
+    except GroundStationRequest.DoesNotExist:
+        raise Http404("groundstationRequest not found")
+    
+#image restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def image_list(request):
+    if request.method == 'GET':
+        images = Image.objects.all()
+        serializer = ImageSerializer(images, many=True)
+        return Response(serializer.data)
 
-#image controller--------------------
-def add_image(imageId,imageSize,imageType,groundStationRequest,imagingTask):
-    try:
-        image = Image(imageId= imageId,
-                      imageSize = imageSize,
-                      imageType = imageType,
-                      groundStationRequest = groundStationRequest,
-                      imagingTask = imagingTask)
-        image.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
 
-def get_all_images():
-    try:
-        return Image.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        request_id = request.data.get('groundStationRequest')
+        if not GroundStationRequest.objects.filter(id=request_id).exists():
+            return JsonResponse({'error': 'request not found'}, status=400)
+        task_id = request.data.get('imagingTask')
+        if not ImagingTask.objects.filter(id=task_id).exists():
+            return JsonResponse({'error': 'task not found'}, status=400)
 
-def get_image_by_id(imageId) -> Image:
+        serializer = ImageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+def image_detail(request, image_id):
     try:
-        image = Image.objects.get(imageId=imageId)
-        return image
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('image not found.')
+        image = Image.objects.get(imageId=image_id)
 
-def update_image_info(imageId,imageSize,imageType,groundStationRequest,imagingTask):
-    try:
-        image = Image.objects.get(imageId=imageId)
-        image.imageSize = imageSize
-        image.imageType = imageType
-        image.groundStationRequest = groundStationRequest
-        image.imagingTask = imagingTask
-        image.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('image not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # For GET requests
+        if request.method == 'GET':
+            serializer = ImageSerializer(image)
+            return JsonResponse(serializer.data)
 
-def delete_image_by_id(imageId):
-    try:
-        image = Image.objects.get(imageId=imageId)
-        image.delete()
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = ImageSerializer(image, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            image.delete()
+            return HttpResponse(status=204)
+
     except Image.DoesNotExist:
-        return HttpResponseBadRequest('image not found.')
+        raise Http404("image not found")
     
-#Outage controller-------------------
-def add_outage(outageId,startTime,endTime,groundStation,satellite):
-    try:
-        outage = Outage(outageId=outageId,
-                        startTime=startTime,
-                        endTime=endTime,
-                        groundStation=groundStation,
-                        satellite=satellite)
-        outage.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#outage restAPI-----------------------------------------
+@api_view(['GET', 'POST'])
+def outage_list(request):
+    if request.method == 'GET':
+        outages = Outage.objects.all()
+        serializer = OutageSerializer(outages, many=True)
+        return Response(serializer.data)
 
-def get_all_outage():
-    try:
-        return Outage.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    elif request.method == 'POST':
 
-def get_outage_by_id(outageId) -> Outage:
-    try:
-        outage = Outage.objects.get(outageId=outageId)
-        return outage
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('outage not found.')
+        station_id = request.data.get('groundStation')
+        if not GroundStation.objects.filter(id=station_id).exists():
+            return JsonResponse({'error': 'groundstation not found'}, status=400)
+        satellite_id = request.data.get('satellite')
+        if not Satellite.objects.filter(id=satellite_id).exists():
+            return JsonResponse({'error': 'satellite not found'}, status=400)
 
-def update_outage_info(outageId,startTime,endTime,groundStation,satellite):
+        serializer = OutageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+def outage_detail(request, outage_id):
     try:
-        outage = Outage.objects.get(outageId=outageId)
-        outage.startTime = startTime
-        outage.endTime = endTime
-        outage.groundStation = groundStation
-        outage.satellite = satellite
-        outage.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('outage not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        outage = Outage.objects.get(outageId = outage_id)
 
-def delete_outage_by_id(outageId):
-    try:
-        outage = Outage.objects.get(outageId=outageId)
-        outage.delete()
+        # For GET requests
+        if request.method == 'GET':
+            serializer = OutageSerializer(outage)
+            return JsonResponse(serializer.data)
+
+        # For PUT requests
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            serializer = OutageSerializer(Outage, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data)
+            return JsonResponse(serializer.errors, status=400)
+
+        # For DELETE requests
+        elif request.method == 'DELETE':
+            outage.delete()
+            return HttpResponse(status=204)
+
     except Outage.DoesNotExist:
-        return HttpResponseBadRequest('outage not found.')
+        raise Http404("outage not found")

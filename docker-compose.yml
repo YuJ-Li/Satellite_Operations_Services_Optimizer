@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     ports:
-      - 7000:7000
+      - 7001:7001
     command: python ./Satellite_Operations_Services_Optimizer/manage.py runserver 0.0.0.0:7000
     volumes:
       - .:/app
@@ -29,6 +29,7 @@ services:
         test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
         interval: 30s
         timeout: 10s
-
+    ports:
+      - 3306:3306
 
   
