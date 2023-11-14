@@ -1,3 +1,9 @@
+# from .repositories import *
+import json
+import os
+import secrets
+
+
 class Task:
     def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
         self.name = name
@@ -122,3 +128,25 @@ edf(priority_list, satellites)
 
 for satellite in satellites:
     print(satellite.schedule)
+
+directory_path = "order_samples"
+json_files = [f for f in os.listdir(directory_path) if f.endswith('.json')]
+
+for file_name in json_files:
+    file_path = os.path.join(directory_path, file_name)
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        # Extract information as variables
+        latitude = float(data["Latitude"])
+        longitude = float(data["Longitude"])
+        priority = int(data["Priority"])
+        image_type = data["ImageType"]
+        image_start_time = data["ImageStartTime"]
+        image_end_time = data["ImageEndTime"]
+        delivery_time = data["DeliveryTime"]
+        revisit_time = 0 if data["RevisitTime"] == "False" else int(data["RevisitTime"])
+        random_id = secrets.token_hex(8)
+        print(f"Latitude: {latitude}, Longitude: {longitude}, Priority: {priority}, ImageType: {image_type}, Revisit: {revisit_time}")
+        # add_imagingTask(TaskID = random_id,revisitFrequency = 0,priority=priority,imagingRegionLatitude = latitude,imagingRegionLongitude = longitude,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+
+
