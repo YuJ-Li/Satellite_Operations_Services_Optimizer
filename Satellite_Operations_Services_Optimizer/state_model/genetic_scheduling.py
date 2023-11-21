@@ -17,14 +17,12 @@ class Chromosome:
         total_priority = 0
         for task in self.tasks:                
             multiplier=0
-            if task.location is not None and task.priority == 5:
-                multiplier = 10000
-            elif task.location is not None and task.priority == 4:
-                multiplier = 1000
+            if task.location is not None and task.priority == 4:
+                multiplier = 50^3
             elif task.location is not None and task.priority == 3:
-                multiplier = 100
+                multiplier = 50^2
             elif task.location is not None and task.priority == 2:
-                multiplier = 10
+                multiplier = 50
             elif task.location is not None and task.priority == 1:
                 multiplier = 1
             total_priority += task.priority * multiplier
@@ -52,14 +50,20 @@ def crossover(parent1, parent2):
 
 def mutate(chromosome):
     mutated_chromosome = chromosome.tasks.copy()
+
+    # Skip mutation if the length is less than 2
+    if len(mutated_chromosome) < 2:
+        return Chromosome(mutated_chromosome)
+
     idx1, idx2 = random.sample(range(len(mutated_chromosome)), 2)
     mutated_chromosome[idx1], mutated_chromosome[idx2] = mutated_chromosome[idx2], mutated_chromosome[idx1]
-    
+
     # Check if the mutated task has an entered location, and if it does, revert to the original task
     if mutated_chromosome[idx1].location is not None:
         mutated_chromosome[idx1] = chromosome.tasks[idx1]
 
     return Chromosome(mutated_chromosome)
+
 
 def is_task_overlap(task1, task2):
     return task1.start_time < task2.end_time and task1.end_time > task2.start_time
@@ -77,6 +81,8 @@ def assign_locations(chromosome):
 
         if candidate_machines:
             assigned_machine = random.choice(candidate_machines)
+        elif task.location is not None:
+            continue
         else:
             available_machines = set(range(1, 6)) - set(machine_assignments.keys())
 
@@ -125,7 +131,7 @@ def genetic_algorithm(task_list, population_size, generations):
 
 if __name__ == "__main__":
     tasks = [
-        Task("Task1", start_time=0, end_time=3, priority=5, location='Machine1'),
+        Task("Task1", start_time=0, end_time=3, priority=4, location='Machine1'),
         Task("Task2", start_time=2, end_time=7, priority=2),
         Task("Task3", start_time=5, end_time=7, priority=1),
         Task("Task4", start_time=8, end_time=12, priority=4),
@@ -146,12 +152,16 @@ if __name__ == "__main__":
         Task("Task19", start_time=1, end_time=6, priority=4),
         Task("Task20", start_time=3, end_time=8, priority=3),
     ]
-
+    tasks = sorted(tasks, key=lambda x: x.priority, reverse=True)
     population_size = 40
     generations = 50
 
     result = genetic_algorithm(tasks, population_size, generations)
 
     print("Optimal Schedule:")
-    for task in result.tasks:
-        print(f"{task.name} (Start Time: {task.start_time}, End Time: {task.end_time}, Priority: {task.priority}, Location: {task.location})")
+    for task in tasks:
+        scheduled_task = next((t for t in result.tasks if t.name == task.name), None)
+        if scheduled_task is not None and scheduled_task.location is not None:
+            print(f"{scheduled_task.name} (Start Time: {scheduled_task.start_time}, End Time: {scheduled_task.end_time}, Priority: {scheduled_task.priority}, Location: {scheduled_task.location})")
+        else:
+            print(f"{task.name} not scheduled")
