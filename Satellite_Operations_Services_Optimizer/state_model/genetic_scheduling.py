@@ -1,167 +1,155 @@
-import random
-
 class Task:
-    def __init__(self, name, start_time, end_time, priority, location = None):
+    def __init__(self, name, start_time, end_time, duration, priority, satellite=None):
         self.name = name
         self.start_time = start_time
         self.end_time = end_time
-        self.priority = priority
-        self.location = location  # The location will be determined by the genetic algorithm
-
-class Chromosome:
-    def __init__(self, tasks):
-        self.tasks = tasks
-        self.fitness = self.calculate_fitness()
-
-    def calculate_fitness(self):
-        total_priority = 0
-        for task in self.tasks:                
-            multiplier=0
-            if task.location is not None and task.priority == 4:
-                multiplier = 50**3
-            elif task.location is not None and task.priority == 3:
-                multiplier = 50**2
-            elif task.location is not None and task.priority == 2:
-                multiplier = 50
-            elif task.location is not None and task.priority == 1:
-                multiplier = 1
-            total_priority += task.priority * multiplier
-        return total_priority / len(self.tasks)
-
-def create_initial_population(task_list, population_size):
-    return [Chromosome(random.sample(task_list, len(task_list))) for _ in range(population_size)]
-
-def crossover(parent1, parent2):
-    child_tasks = []
-
-    for task in parent1.tasks:
-        # Include tasks from parent1 if the priority is higher or the task is not in child_tasks
-        if task not in child_tasks or task.priority > child_tasks[child_tasks.index(task)].priority:
-            child_tasks.append(task)
-        else:
-            # Include tasks from parent2 if the priority is higher and not already in child_tasks
-            parent2_tasks = [t for t in parent2.tasks if t not in child_tasks]
-            higher_priority_tasks = [t for t in parent2_tasks if t.priority > task.priority]
-
-            if higher_priority_tasks:
-                child_tasks.append(random.choice(higher_priority_tasks))
-
-    return Chromosome(child_tasks)
-
-def mutate(chromosome):
-    mutated_chromosome = chromosome.tasks.copy()
-
-    # Skip mutation if the length is less than 2
-    if len(mutated_chromosome) < 2:
-        return Chromosome(mutated_chromosome)
-
-    idx1, idx2 = random.sample(range(len(mutated_chromosome)), 2)
-    mutated_chromosome[idx1], mutated_chromosome[idx2] = mutated_chromosome[idx2], mutated_chromosome[idx1]
-
-    # Check if the mutated task has an entered location, and if it does, revert to the original task
-    if mutated_chromosome[idx1].location is not None:
-        mutated_chromosome[idx1] = chromosome.tasks[idx1]
-
-    return Chromosome(mutated_chromosome)
+        self.duration = duration
+        self.priority = priority  # priority from 3 to 1 = from high to low
+        self.satellite = satellite
 
 
-def is_task_overlap(task1, task2):
-    return task1.start_time < task2.end_time and task1.end_time > task2.start_time
+class Satellite:
+    def __init__(self, name, activity_window):
+        self.name = name
+        self.activity_window = activity_window
+        self.schedule = []  # list of ((#task_name, actual_start_time, real_end_time))
 
-def is_gap_between_tasks(task1, task2):
-    return task2.start_time - task1.end_time > 0
 
-def assign_locations(chromosome):
-    machine_assignments = {}
-    tasks_sorted_by_start_time = sorted(chromosome.tasks, key=lambda x: x.start_time)
+satellites = [Satellite('S1', (0, 23)), Satellite('S2', (0, 23)), Satellite('S3', (0, 23)),
+              Satellite('S4', (0, 23)), Satellite('S5', (0, 23))]
 
-    for task in tasks_sorted_by_start_time:
-        candidate_machines = [machine for machine, last_task_end_time in machine_assignments.items()
-                              if not is_task_overlap(task, last_task_end_time) and is_gap_between_tasks(last_task_end_time, task)]
+tasks = [
+    Task("Task1", start_time=0, end_time=3, duration=3, priority=4, satellite=satellites[0]),
+    Task("Task2", start_time=2, end_time=7, duration=5, priority=2),
+    Task("Task3", start_time=5, end_time=7, duration=2, priority=1),
+    Task("Task4", start_time=8, end_time=12, duration=4, priority=4),
+    Task("Task5", start_time=1, end_time=5, duration=4, priority=4),
+    Task("Task6", start_time=6, end_time=10, duration=4, priority=3),
+    Task("Task7", start_time=2, end_time=6, duration=4, priority=2),
+    Task("Task8", start_time=4, end_time=9, duration=5, priority=1),
+    Task("Task9", start_time=9, end_time=12, duration=3, priority=4),
+    Task("Task10", start_time=1, end_time=4, duration=3, priority=3),
+    Task("Task11", start_time=5, end_time=9, duration=4, priority=2),
+    Task("Task12", start_time=3, end_time=8, duration=5, priority=1),
+    Task("Task13", start_time=7, end_time=11, duration=4, priority=4),
+    Task("Task14", start_time=10, end_time=15, duration=5, priority=4),
+    Task("Task15", start_time=2, end_time=5, duration=3, priority=3),
+    Task("Task16", start_time=6, end_time=9, duration=3, priority=2),
+    Task("Task17", start_time=4, end_time=7, duration=3, priority=1),
+    Task("Task18", start_time=8, end_time=11, duration=3, priority=4),
+    Task("Task19", start_time=1, end_time=5, duration=4, priority=4),
+    Task("Task20", start_time=3, end_time=8, duration=5, priority=3),
+]
 
-        if candidate_machines:
-            assigned_machine = random.choice(candidate_machines)
-        elif task.location is not None:
-            continue
-        else:
-            available_machines = set(range(1, 6)) - set(machine_assignments.keys())
+import random
 
-            print(f"Task {task.name} available machines: {available_machines}")
-
-            if available_machines:
-                assigned_machine = random.choice(list(available_machines))
+# Define the fitness function
+def fitness(schedule):
+    total = 0
+    for task in schedule:
+        if task is not None:
+            if task.priority == 4:
+                total += 50**3
+            elif task.priority == 3:
+                total += 50**2
+            elif task.priority == 2:
+                total += 50
             else:
-                assigned_machine = None  # Assign None when there are no available machines
+                total += 1
+    return total
 
-        machine_assignments[assigned_machine] = task
-        task.location = f"Machine{assigned_machine}" if assigned_machine is not None else None
+# Define the mutation function
+def mutate(schedule):
+    for i in range(len(schedule)):
+        if schedule[i] is not None:
+            # Change the start time of the task within the allowed window
+            new_start_time = random.randint(schedule[i].start_time, schedule[i].end_time - schedule[i].duration)
+            schedule[i].start_time = new_start_time
 
-# Replace the elite selection with tournament selection
-def select_elite(population, elite_size):
-    elites = []
-    for _ in range(elite_size):
-        tournament_size = min(3, len(population))  # Adjust the tournament size as needed
-        tournament = random.sample(population, tournament_size)
-        winner = max(tournament, key=lambda x: x.fitness)
-        elites.append(winner)
-    return elites
+# Define the crossover function
+def crossover(schedule1, schedule2):
+    if len(schedule1) > 2:
+        index = random.randint(1, len(schedule1) - 2)
+        new_schedule1 = schedule1[:index] + schedule2[index:]
+        new_schedule2 = schedule2[:index] + schedule1[index:]
+        return new_schedule1, new_schedule2
+    else:
+        return schedule1, schedule2
 
-# Update the genetic_algorithm function to use the new elite selection
-def genetic_algorithm(task_list, population_size, generations):
-    population = create_initial_population(task_list, population_size)
+# Initialize the population
+population = []
+unassigned_tasks = tasks.copy()
+satellite_schedules = {satellite.name: [] for satellite in satellites}
 
-    for generation in range(generations):
-        population.sort(key=lambda x: x.fitness, reverse=True)
-        elite = select_elite(population, 2)
-        offspring = []
+for _ in range(100): #population
+    random.shuffle(unassigned_tasks)
+    newly_assigned_tasks = []
 
-        for _ in range(population_size - 2):
-            parent1 = random.choice(population)
-            parent2 = random.choice(population)
-            child = crossover(parent1, parent2)
-            if random.random() < 0.1:  # Mutation probability
-                child = mutate(child)
-            assign_locations(child)  # Assign locations to the child
-            offspring.append(child)
+    for task in unassigned_tasks:
+        assigned_satellite = None
 
-        population = elite + offspring
+        for satellite in satellites:
+            # Check if the task's time conflicts with the times of tasks already in the schedule
+            if all(
+                not (task.start_time < t.end_time and t.start_time < task.end_time)
+                for t in satellite_schedules[satellite.name] if t is not None
+            ):
+                assigned_satellite = satellite.name
+                break
 
-    return max(population, key=lambda x: x.fitness)
+        if assigned_satellite is not None:
+            satellite_schedules[assigned_satellite].append(task)
+            newly_assigned_tasks.append(task)
+
+    # Remove newly assigned tasks from unassigned_tasks
+    unassigned_tasks = [task for task in unassigned_tasks if task not in newly_assigned_tasks]
+
+    # Check if all tasks are assigned, break if yes
+    if not unassigned_tasks:
+        break
+
+def print_schedule_info(unassigned_tasks, satellite_schedules):
+    print("Unassigned Tasks:")
+    for task in unassigned_tasks:
+        print(f"Task {task.name}")
+
+    # Print satellite schedules
+    for satellite, schedule in satellite_schedules.items():
+        print(f"\nSatellite {satellite} Schedule:")
+        for task in schedule:
+            print(f"Task {task.name} from {task.start_time} to {task.end_time}")
 
 
-if __name__ == "__main__":
-    tasks = [
-        Task("Task1", start_time=0, end_time=3, priority=4, location='Machine1'),
-        Task("Task2", start_time=2, end_time=7, priority=2),
-        Task("Task3", start_time=5, end_time=7, priority=1),
-        Task("Task4", start_time=8, end_time=12, priority=4),
-        Task("Task5", start_time=1, end_time=5, priority=4),
-        Task("Task6", start_time=6, end_time=10, priority=3),
-        Task("Task7", start_time=2, end_time=6, priority=2),
-        Task("Task8", start_time=4, end_time=9, priority=1),
-        Task("Task9", start_time=9, end_time=12, priority=4),
-        Task("Task10", start_time=1, end_time=4, priority=3),
-        Task("Task11", start_time=5, end_time=9, priority=2),
-        Task("Task12", start_time=3, end_time=8, priority=1),
-        Task("Task13", start_time=7, end_time=11, priority=4),
-        Task("Task14", start_time=10, end_time=15, priority=4),
-        Task("Task15", start_time=2, end_time=5, priority=3),
-        Task("Task16", start_time=6, end_time=9, priority=2),
-        Task("Task17", start_time=4, end_time=7, priority=1),
-        Task("Task18", start_time=8, end_time=11, priority=4),
-        Task("Task19", start_time=1, end_time=6, priority=4),
-        Task("Task20", start_time=3, end_time=8, priority=3),
-    ]
-    tasks = sorted(tasks, key=lambda x: x.priority, reverse=True)
-    population_size = 40
-    generations = 50
 
-    result = genetic_algorithm(tasks, population_size, generations)
 
-    print("Optimal Schedule:")
-    for task in tasks:
-        scheduled_task = next((t for t in result.tasks if t.name == task.name), None)
-        if scheduled_task is not None and scheduled_task.location is not None:
-            print(f"{scheduled_task.name} (Start Time: {scheduled_task.start_time}, End Time: {scheduled_task.end_time}, Priority: {scheduled_task.priority}, Location: {scheduled_task.location})")
+# Run the genetic algorithm
+for _ in range(0,200): #Generations
+    if random.random() < 0.5:
+        # Mutation
+        if population:
+            schedule = random.choice(population)[:]
+            mutate(schedule)
+            population.append(schedule)
         else:
-            print(f"{task.name} not scheduled")
+            # If the population is empty, generate a new random schedule
+            new_schedule = []
+            for satellite in satellites:
+                possible_tasks = [task for task in tasks if
+                                  (task.satellite is None or task.satellite.name == satellite.name)]
+                random.shuffle(possible_tasks)
+                new_schedule.extend(possible_tasks[:50])
+            population.append(new_schedule)
+    else:
+        # Crossover
+        if len(population) >= 2:
+            schedule1, schedule2 = random.sample(population, 2)
+            offspring1, offspring2 = crossover(schedule1, schedule2)
+            population.append(offspring1)
+            population.append(offspring2)
+
+    # Select the top 100 schedules based on fitness for the next generation
+    population = sorted(population, key=fitness, reverse=True)[:100]
+
+
+# Print schedule information
+print_schedule_info(unassigned_tasks, satellite_schedules)
