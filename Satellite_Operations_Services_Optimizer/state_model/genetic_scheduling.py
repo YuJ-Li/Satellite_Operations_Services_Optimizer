@@ -18,9 +18,9 @@ class Chromosome:
         for task in self.tasks:                
             multiplier=0
             if task.location is not None and task.priority == 4:
-                multiplier = 50^3
+                multiplier = 50**3
             elif task.location is not None and task.priority == 3:
-                multiplier = 50^2
+                multiplier = 50**2
             elif task.location is not None and task.priority == 2:
                 multiplier = 50
             elif task.location is not None and task.priority == 1:
