@@ -1,9 +1,14 @@
 # from .repositories import *
 import json
 import os
-import secrets
 from datetime import datetime
 import datetime as dt
+from enum import Enum
+from skyfield.api import EarthSatellite, load, wgs84, Topos
+import math
+
+
+###################################### CLASSES ###########################################
 
 class Task:
     def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
@@ -15,12 +20,27 @@ class Task:
         self.satellite = satellite # to be determined by the scheduling algorithm
 
 class Satellite:
-    def __init__(self, name, activity_window):
+    def __init__(self, name, activity_window, tle):
         self.name = name
         self.activity_window = activity_window
         self.schedule = [] # list of ((#task_name, actual_start_time, real_end_time))
+        self.tle = tle
 
 
+class ImageTask(Task):
+    def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None):
+        super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
+        self.image_type = image_type
+        self.latitude = latitude
+        self.longitude = longitude
+
+class ImageType(Enum):
+    SPOTLIGHT = {'time_for_writing':120, 'size':512, 'dimension':[10,10]}
+    MEDIUM = {'time_for_writing':45, 'size':256, 'dimension':[40,20]}
+    LOW = {'time_for_writing':20, 'size':128, 'dimension':[40,20]}
+
+
+##################################### EDF functions ######################################
 def group_by_priority(task_list):
     priority_list = {}
     for task in task_list:
@@ -52,6 +72,7 @@ def edf(priority_list, satellites):
         for task in tasks:
             scheduled = False
             for satellite in satellites:
+                # TODO: check if the task is achievable on this satellite
                 if task.satellite is not None and task.satellite != satellite: continue
                 schedule_ptr = -1
                 while not scheduled and schedule_ptr<len(satellite.schedule):
@@ -62,7 +83,6 @@ def edf(priority_list, satellites):
                             scheduled_end = scheduled_start + task.duration
                             satellite.schedule.insert(schedule_ptr, (task.name, scheduled_start, scheduled_end)) 
                             scheduled = True
-                            # TODO: remove this task from the task list
                             # print(f'{task.name} is scheduled on {satellite.name}.')
                             break
                         elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
@@ -70,17 +90,22 @@ def edf(priority_list, satellites):
                             scheduled_end = scheduled_start + task.duration
                             satellite.schedule.insert(schedule_ptr, (task.name, scheduled_start, scheduled_end)) 
                             scheduled = True
-                            # TODO: remove this task from the task list
                             # print(f'{task.name} is scheduled on {satellite.name}.')
                             break
                 if scheduled: break
             if not scheduled:
                 unscheduled_tasks.append(task)
                 # print(f'Failed to schedule {task.name}.')
+            else:
+                # if a task got scheduled, re-sort the satellites by increasing number of tasks scheduled on them
+                # to ensure satellite
+                satellites = sort_satellites_by_number_of_tasks(satellites)
+
     print(f'{len(unscheduled_tasks)} tasks failed to be scheduled: ')
     for t in unscheduled_tasks:
         print(t.name)
     
+
 def find_next_slot(satellite, ptr):
     '''ptr is the index of task scheduled on this satellite from which we start to find empty slot'''
     satellite_schedule = satellite.schedule
@@ -98,7 +123,14 @@ def find_next_slot(satellite, ptr):
         if satellite.activity_window[1] - satellite_schedule[ptr][2] > dt.timedelta(seconds=0):
             return satellite_schedule[ptr][2], satellite.activity_window[1], ptr+1
     return None, None, ptr+1
-        
+
+
+def sort_satellites_by_number_of_tasks(satellites):
+    sorted_satellites = sorted(satellites, key=lambda x: len(x.schedule))
+    return sorted_satellites
+
+
+######################################## General functions ##########################################
 
 def read_directory(path):
     json_files = [f.path for f in os.scandir(path) if f.is_file() and f.name.endswith(('.json', '.JSON'))]
@@ -111,17 +143,101 @@ def convert_str_to_datetime(datetime_str):
     datetime_obj = datetime(int(arr[0]),int(arr[1]),int(arr[2]),int(arr[3]),int(arr[4]),int(arr[5]))
     return datetime_obj
 
-def get_imaging_writing_duration(ImageType):
-    match ImageType:
+def get_image_type(image_type):
+    match image_type:
         case "Low":
-            return 20 # unit: seconds
+            return ImageType.LOW
         case "Medium":
-            return 45 # unit: seconds
+            return ImageType.MEDIUM
         case "Spotlight":
-            return 120 # unit: seconds
+            return ImageType.SPOTLIGHT
+        
+def get_satellite_by_name(satellites, name):
+    for satellite in satellites:
+        if satellite.name == name:
+            return satellite
+    return None
 
 
-''' process maintenance acticvities ''' 
+#####################################################################################
+#####################################################################################
+
+def check_task_achievability_on_satellite(imaging_tasks, satellites):
+    achievabilities = []
+    for task in imaging_tasks:
+        satellite_achievabilities = {}
+        for satellite in satellites:
+            tle_satellite = EarthSatellite(satellite.tle[1], satellite.tle[2], satellite.name)
+
+            center_lat = task.latitude
+            center_lon = task.longitude
+            image_corner1,image_corner2,image_corner3,image_corner4 = find_corner_lat_lon(center_lat, center_lon, task.value["dimension"])
+
+            # time1, events1 = tle_satellite.find_events(image_corner1, task.start_time, task.end_time, altitude_degrees=60)
+            # time2, events2 = tle_satellite.find_events(image_corner2, task.start_time, task.end_time, altitude_degrees=60)
+            # time3, events3 = tle_satellite.find_events(image_corner3, task.start_time, task.end_time, altitude_degrees=60)
+            # time4, events4 = tle_satellite.find_events(image_corner4, task.start_time, task.end_time, altitude_degrees=60)
+
+            # for t, e in zip(time, events):
+    return achievabilities
+    
+
+def find_corner_lat_lon(center_lat, center_lon, dimension):
+    # https://en.wikipedia.org/wiki/Latitude
+    # N,E:+
+    # S,W:-
+    # Longitude: km divided by 111.320 
+    corner_east = longitude_normalization(center_lon + (dimension[1]/2)/111.320)
+    corner_west = longitude_normalization(center_lon - (dimension[1]/2)/111.320)
+    # Latitude: km divided by 110.574 
+    corner_north = center_lat + (dimension[0]/2)/110.574 
+    corner_south = center_lat - (dimension[0]/2)/110.574
+    if corner_north>90:
+        corner_north = 90-(corner_north-90)
+        # flip longtitude
+        corner_east2 = longitude_normalization(corner_east + 180)
+        corner_west2 = longitude_normalization(corner_west + 180)
+        # return corners (north-east, north-west, south-east, south-west)
+        return [(corner_north, corner_east2),(corner_north, corner_west2),(corner_south, corner_east),(corner_south, corner_west)]
+    if corner_south<-90:
+        corner_south = -90 - (corner_south + 90)
+        # flip longitude
+        corner_east2 = longitude_normalization(corner_east + 180)
+        corner_west2 = longitude_normalization(corner_west + 180)
+        # return corners (north-east, north-west, south-east, south-west)   
+        return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east2),(corner_south, corner_west2)]
+    return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east),(corner_south, corner_west)]
+
+
+def longitude_normalization(degree):
+    if degree > 180:
+        return degree % 180 - 180
+    elif degree < -180:
+        return 180 - abs(degree) % 180
+    else: 
+        return degree
+
+
+
+
+
+############################### Initialize satellites ################################
+with open('/app/TLE/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read()
+with open('/app/TLE/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read()
+with open('/app/TLE/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read()
+with open('/app/TLE/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read()
+with open('/app/TLE/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read()
+
+time_window_start = datetime(2023, 10, 8, 00, 00, 00)
+time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
+
+satellites = [Satellite('SOSO-1',(time_window_start,time_window_end), tle1),
+              Satellite('SOSO-2',(time_window_start,time_window_end), tle2),
+              Satellite('SOSO-3',(time_window_start,time_window_end), tle3),
+              Satellite('SOSO-4',(time_window_start,time_window_end), tle4),
+              Satellite('SOSO-5',(time_window_start,time_window_end), tle5)]
+
+############################### process maintenance acticvities ############################### 
 maintenance_path = "/app/order_samples/group1" # group 1 is a set of maintenance activities
 maintenance_json_files = read_directory(maintenance_path)
 print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
@@ -134,16 +250,17 @@ for json_file in maintenance_json_files:
         data = json.load(file)
         # for simplicity, we only consider the window (start and end time) and duration 
         name = data["Activity"] + str(index)
+        target = get_satellite_by_name(satellites, data["Target"])
         start_time = convert_str_to_datetime(data["Window"]["Start"])
         end_time = convert_str_to_datetime(data["Window"]["End"])
         duration = dt.timedelta(seconds=int(data["Duration"]))
         # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
         # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-        maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4))
+        maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
     index += 1
 print(f'There are {len(maintenance_activities)} maintenance activities.')
 
-''' process imaging tasks '''
+############################### process imaging tasks ###############################
 imaging_path = "/app/order_samples/group2" # group 2 is a set of imaging tasks
 imaging_json_files = read_directory(imaging_path)
 print(f'{imaging_path} contains {len(imaging_json_files)} files.')
@@ -160,27 +277,17 @@ for json_file in imaging_json_files:
         priority = data["Priority"]
         start_time = convert_str_to_datetime(data["ImageStartTime"])
         end_time = convert_str_to_datetime(data["ImageEndTime"])
-        duration = dt.timedelta(seconds=get_imaging_writing_duration(data["ImageType"]))
+        image_type = get_image_type(data["ImageType"])
+        duration = dt.timedelta(seconds=int(image_type.value['time_for_writing']))
+        lat = data["Latitude"]
+        lon = data["Longitude"]
         # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
         # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-        imaging_tasks.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
+        imaging_tasks.append(ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
     index += 1
 print(f'There are {len(imaging_tasks)} Imaging tasks.')
 
 
-
-############################### Initialize satellites ################################
-time_window_start1 = datetime(2023, 10, 8, 6, 00, 00)
-time_window_end1 = datetime(2023, 10, 8, 10, 00, 00) # S1: 2023-10-08 morning
-time_window_start2 = datetime(2023, 10, 9, 18, 00, 00)
-time_window_end2 = datetime(2023, 10, 9, 23, 59, 59) # S2: 2023-10-09 evening
-time_window_start3 = datetime(2023, 10, 8, 20, 00, 00)
-time_window_end3 = datetime(2023, 10, 8, 23, 59, 59) # S3: late 2023-10-08 
-time_window_start4 = datetime(2023, 10, 8, 10, 00, 00)
-time_window_end4 = datetime(2023, 10, 8, 14, 00, 00) # S4: 2023-10-08 noon
-time_window_start5 = datetime(2023, 10, 9, 6, 00, 00)
-time_window_end5 = datetime(2023, 10, 9, 12, 00, 00) # S5: 2023-10-09 morning
-satellites = [Satellite('S1',(time_window_start1,time_window_end1)),Satellite('S2',(time_window_start2,time_window_end2)),Satellite('S3',(time_window_start3,time_window_end3)),Satellite('S4',(time_window_start4,time_window_end4)),Satellite('S5',(time_window_start5,time_window_end5))]
 
 print('----------------- SCHEDULING START -----------------')
 
@@ -230,26 +337,7 @@ for satellite in satellites:
 
 
 
-
-# tasks = [
-#         Task("Task1", start_time=0, end_time=3, duration=3, priority=5, satellite=satellites[0]),
-#         Task("Task2", start_time=2, end_time=7, duration=5, priority=2),
-#         Task("Task3", start_time=5, end_time=7, duration=2, priority=1),
-#         Task("Task4", start_time=8, end_time=12, duration=4, priority=4),
-#         Task("Task5", start_time=1, end_time=5, duration=4, priority=4),
-#         Task("Task6", start_time=6, end_time=10, duration=4, priority=3),
-#         Task("Task7", start_time=2, end_time=6, duration=4, priority=2),
-#         Task("Task8", start_time=4, end_time=9, duration=5, priority=1),
-#         Task("Task9", start_time=9, end_time=12, duration=3, priority=4),
-#         Task("Task10", start_time=1, end_time=4, duration=3, priority=3),
-#         Task("Task11", start_time=5, end_time=9, duration=4, priority=2),
-#         Task("Task12", start_time=3, end_time=8, duration=5, priority=1),
-#         Task("Task13", start_time=7, end_time=11, duration=4, priority=4),
-#         Task("Task14", start_time=10, end_time=15, duration=5, priority=4),
-#         Task("Task15", start_time=2, end_time=5, duration=3, priority=3),
-#         Task("Task16", start_time=6, end_time=9, duration=3, priority=2),
-#         Task("Task17", start_time=4, end_time=7, duration=3, priority=1),
-#         Task("Task18", start_time=8, end_time=11, duration=3, priority=4),
-#         Task("Task19", start_time=1, end_time=5, duration=4, priority=4),
-#         Task("Task20", start_time=3, end_time=8, duration=5, priority=3),
-# ]
+# check satellite availibility (fov)
+# target satellite !
+# all satellites start and end at the same time !
+# distribution equally !
