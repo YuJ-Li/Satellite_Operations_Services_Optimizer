@@ -3,6 +3,8 @@ from datetime import datetime
 import datetime as dt
 import json
 import os
+import copy
+from enum import Enum
 
 class Task:
     def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
@@ -12,6 +14,16 @@ class Task:
         self.duration = duration
         self.priority = priority # imaging tasks: priority from 3 to 1 = from high to low; maintenance activity: priority = 4 (highest)
         self.satellite = satellite # to be determined by the scheduling algorithm
+
+class ImageTask(Task):
+    def __init__(self, image_type, name, start_time, end_time, duration, priority, satellite = None):
+        super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
+        self.image_type = image_type
+
+class ImageType(Enum):
+    SPOTLIGHT = {'time_for_writing':120, 'size':512, 'dimension':[10,10]}
+    MEDIUM = {'time_for_writing':45, 'size':256, 'dimension':[40,20]}
+    LOW = {'time_for_writing':20, 'size':128, 'dimension':[40,20]}
 
 class Satellite:
     def __init__(self, name, activity_window):
@@ -23,6 +35,21 @@ class Satellite:
 def read_directory(path):
     json_files = [f.path for f in os.scandir(path) if f.is_file() and f.name.endswith(('.json', '.JSON'))]
     return json_files
+
+def get_image_type(image_type):
+    match image_type:
+        case "Low":
+            return ImageType.LOW
+        case "Medium":
+            return ImageType.MEDIUM
+        case "Spotlight":
+            return ImageType.SPOTLIGHT
+        
+def get_satellite_by_name(satellites, name):
+    for satellite in satellites:
+        if satellite.name == name:
+            return satellite
+    return None
 
 def convert_str_to_datetime(datetime_str):
     date_and_time = datetime_str.split('T')
@@ -110,37 +137,78 @@ def resolve_conflicts(schedule):
                 valid_start_range = random_date(new_start,start_end)
                 sorted_schedule[i].start_time = valid_start_range
 
+def detect_no_conflicts(schedule, task, satellite):
+    act_window = satellite.activity_window
+    if not schedule:
+        if task.start_time >= act_window[0] and task.start_time + task.duration <= act_window[1]:
+            return task.start_time
+        elif task.start_time < act_window[0] and act_window[0] + task.duration <= act_window[1] and act_window[0] + task.duration <= task.end_time:
+            return act_window[0]
+        else:
+            return None
+    else:
+        schedule.sort(key=lambda x: (x[2],x[1]))
+
+        for i, _ in enumerate(schedule):
+
+            if i==0 and task.start_time >= act_window[0] and task.start_time + task.duration <= schedule[i][1]:
+                return task.start_time
+            elif i==0 and task.start_time < act_window[0] and act_window[0] + task.duration <= schedule[i][1] and act_window[0] + task.duration <= task.end_time:
+                return act_window[0]    
+            elif (i-1 >= 0 and i < len(schedule)-1 and task.start_time <= schedule[i-1][2] and schedule[i-1][2] + task.duration <= schedule[i][1] and schedule[i-1][2] + task.duration <= task.end_time):
+                return schedule[i-1][2]
+            elif (i == len(schedule)-1 and schedule[i][2] + task.duration <= act_window[1] and schedule[i][2] + task.duration <= task.end_time and schedule[i][2] >= task.start_time):
+                return schedule[i][2]
+        return None
+
+
 def initialize_population(satellites, tasks, population_size):
+# 1 duration
+# 2 time slot
+    s_time = None
+    temp_tasks = copy.deepcopy(tasks)
     population = []
-    for _ in range(population_size):  # population
+    for _ in range(population_size):
+        tasks = temp_tasks
         random.shuffle(tasks)
         newly_assigned_tasks = []
+        satellite_schedule_temp = {}
 
+        for satellite in satellites:
+            satellite_schedule_temp[satellite.name] = copy.deepcopy(satellite.schedule)
+        
         for task in tasks:
-            assigned_satellite = None
-
-            for satellite in satellites:
+            assigned_satellite = copy.deepcopy(task.satellite.name) if (task.satellite) else None
+            for satellite in satellite_schedule_temp:
+                if (assigned_satellite is not None and satellite != assigned_satellite):
+                    continue
                 # Check if the task's time conflicts with the times of tasks already in the schedule
-                if all(
-                    not (task.start_time < t.end_time and t.start_time < task.end_time)
-                    for t in satellite.schedule if t is not None
-                ):
-                    assigned_satellite = satellite.name
-                    break
+                s_time = detect_no_conflicts(satellite_schedule_temp[satellite], task, get_satellite_by_name(satellites, satellite))
+                if (s_time):
+                    assigned_satellite = satellite
+                else:
+                    assigned_satellite = None
 
-            if assigned_satellite is not None:
-                satellite.schedule.append(task)
+            if assigned_satellite is not None and s_time is not None:
+                satellite_schedule_temp[assigned_satellite].append((task.name, s_time, s_time + task.duration))
                 newly_assigned_tasks.append(task)
 
         # Remove newly assigned tasks from tasks
         tasks = [task for task in tasks if task not in newly_assigned_tasks]
+        population.append(satellite_schedule_temp)
         
-        # Check if all tasks are assigned, break if yes
-        if not tasks:
-            break
-        
-        population.append([task for satellite in satellites for task in satellite.schedule])
     return population
+
+
+def print_population(p):
+    for i, dictionary in enumerate(p):
+        print("Population" + str(i))
+        for satellite in dictionary:
+            print(satellite)
+            temp = []
+            for task in dictionary[satellite]:
+                temp.append(task)
+            print(temp)
 
 def genetic_algorithm(population, fitness_function, mutate_function, crossover_function, generations):
     for generation in range(generations):  # Generations
@@ -179,6 +247,15 @@ def print_schedule_info(unassigned_tasks, satellite_schedules):
             print(f"Task {task.name} from {task.start_time} to {task.end_time}")
 
 if __name__ == "__main__":
+    time_window_start = datetime(2023, 10, 8, 00, 00, 00)
+    time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
+    satellites = [Satellite('SOSO-1',(time_window_start,time_window_end)),
+                Satellite('SOSO-2',(time_window_start,time_window_end)),
+                Satellite('SOSO-3',(time_window_start,time_window_end)),
+                Satellite('SOSO-4',(time_window_start,time_window_end)),
+                Satellite('SOSO-5',(time_window_start,time_window_end))]
+
+
     maintenance_path = "/app/order_samples/group1" # group 1 is a set of maintenance activities
     maintenance_json_files = read_directory(maintenance_path)
     print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
@@ -191,12 +268,13 @@ if __name__ == "__main__":
             data = json.load(file)
             # for simplicity, we only consider the window (start and end time) and duration 
             name = data["Activity"] + str(index)
+            target = get_satellite_by_name(satellites, data["Target"])
             start_time = convert_str_to_datetime(data["Window"]["Start"])
             end_time = convert_str_to_datetime(data["Window"]["End"])
             duration = dt.timedelta(seconds=int(data["Duration"]))
-            print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
+            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
             # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4))
+            maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
         index += 1
     print(f'There are {len(maintenance_activities)} maintenance activities.')
 
@@ -210,43 +288,37 @@ if __name__ == "__main__":
     for json_file in imaging_json_files:
         file_path = os.path.join(imaging_path, json_file)
         with open(file_path, 'r') as file:
+            # print(file_path)
             data = json.load(file)
             # for simplicity, we only consider the priority, window (start and end time) and duration 
             name = "ImagingTask" + str(index)
             priority = data["Priority"]
             start_time = convert_str_to_datetime(data["ImageStartTime"])
             end_time = convert_str_to_datetime(data["ImageEndTime"])
-            duration = dt.timedelta(seconds=get_imaging_writing_duration(data["ImageType"]))
-            print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
+            image_type = get_image_type(data["ImageType"])
+            duration = dt.timedelta(seconds=int(image_type.value['time_for_writing']))
+            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
             # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            imaging_tasks.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
+            imaging_tasks.append(ImageTask(image_type=image_type, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
         index += 1
     print(f'There are {len(imaging_tasks)} Imaging tasks.')
 
 
 
     ############################### Initialize satellites ################################
-    time_window_start1 = datetime(2023, 10, 8, 6, 00, 00)
-    time_window_end1 = datetime(2023, 10, 8, 10, 00, 00) # S1: 2023-10-08 morning
-    time_window_start2 = datetime(2023, 10, 9, 18, 00, 00)
-    time_window_end2 = datetime(2023, 10, 9, 23, 59, 59) # S2: 2023-10-09 evening
-    time_window_start3 = datetime(2023, 10, 8, 20, 00, 00)
-    time_window_end3 = datetime(2023, 10, 8, 23, 59, 59) # S3: late 2023-10-08 
-    time_window_start4 = datetime(2023, 10, 8, 10, 00, 00)
-    time_window_end4 = datetime(2023, 10, 8, 14, 00, 00) # S4: 2023-10-08 noon
-    time_window_start5 = datetime(2023, 10, 9, 6, 00, 00)
-    time_window_end5 = datetime(2023, 10, 9, 12, 00, 00) # S5: 2023-10-09 morning
-    satellites = [Satellite('S1',(time_window_start1,time_window_end1)),Satellite('S2',(time_window_start2,time_window_end2)),Satellite('S3',(time_window_start3,time_window_end3)),Satellite('S4',(time_window_start4,time_window_end4)),Satellite('S5',(time_window_start5,time_window_end5))]
 
     population_size = 500
     generations = 1000
 
     population = initialize_population(satellites, maintenance_activities, population_size)
     
-    genetic_algorithm(population, fitness, mutate, crossover, generations)
+    print(len(population))
+    print_population(population)
 
-    # Identify unassigned tasks
-    unassigned_tasks = [task for task in maintenance_activities if task not in [t for sat in satellites for t in sat.schedule]]
+    # genetic_algorithm(population, fitness, mutate, crossover, generations)
 
-    # Print schedule information
-    print_schedule_info(unassigned_tasks, {satellite.name: satellite.schedule for satellite in satellites})
+    # # Identify unassigned tasks
+    # unassigned_tasks = [task for task in maintenance_activities if task not in [t for sat in satellites for t in sat.schedule]]
+
+    # # Print schedule information
+    # print_schedule_info(unassigned_tasks, {satellite.name: satellite.schedule for satellite in satellites})
