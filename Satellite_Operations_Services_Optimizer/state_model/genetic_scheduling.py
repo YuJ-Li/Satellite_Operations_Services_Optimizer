@@ -77,66 +77,7 @@ def random_date(start, end):
     random_second = random.randrange(int_delta)
     return start + dt.timedelta(seconds=random_second)
 
-
-
-# Define the fitness function
-def fitness(schedule):
-    total = 0
-    for task in schedule:
-        if task is not None:
-            if task.priority == 4:
-                total += 50**3
-            elif task.priority == 3:
-                total += 50**2
-            elif task.priority == 2:
-                total += 50
-            else:
-                total += 1
-    return total
-
-# Define the mutation function
-def mutate(schedule):
-    for i in range(len(schedule)):
-        if schedule[i] is not None:
-            task = schedule[i]
-            if (task.end_time - task.start_time) == task.duration:
-                new_start_time = task.start_time
-            else:
-
-                # Change the start time of the task within the allowed window
-                new_start_time = random_date(task.start_time, task.end_time - task.duration)
-            # Ensure the new start time allows for the full duration of the task
-            schedule[i].start_time = new_start_time
-
-
-# Define the crossover function
-def crossover(schedule1, schedule2):
-    if len(schedule1) > 2:
-        index = random.randint(1, len(schedule1) - 2)
-        new_schedule1 = schedule1[:index] + schedule2[index:]
-        new_schedule2 = schedule2[:index] + schedule1[index:]
-
-        # Resolve conflicts in the offspring schedules
-        resolve_conflicts(new_schedule1)
-        resolve_conflicts(new_schedule2)
-        return new_schedule1, new_schedule2
-    else:
-        return schedule1, schedule2
-
-def resolve_conflicts(schedule):
-    """
-    Resolve conflicts in the schedule by adjusting start times.
-    """
-    sorted_schedule = sorted(schedule, key=lambda task: task.start_time)
-    for i in range(1, len(sorted_schedule)):
-        if sorted_schedule[i].start_time < sorted_schedule[i - 1].end_time:
-            # There is a conflict, adjust the start time
-            new_start = sorted_schedule[i - 1].end_time
-            start_end = sorted_schedule[i].end_time - sorted_schedule[i].duration
-            if start_end > new_start:
-                valid_start_range = random_date(new_start,start_end)
-                sorted_schedule[i].start_time = valid_start_range
-
+########################################################################################
 def detect_no_conflicts(schedule, task, satellite):
     act_window = satellite.activity_window
     if not schedule:
@@ -163,8 +104,6 @@ def detect_no_conflicts(schedule, task, satellite):
 
 
 def initialize_population(satellites, tasks, population_size):
-# 1 duration
-# 2 time slot
     s_time = None
     temp_tasks = copy.deepcopy(tasks)
     population = []
@@ -190,7 +129,7 @@ def initialize_population(satellites, tasks, population_size):
                     assigned_satellite = None
 
             if assigned_satellite is not None and s_time is not None:
-                satellite_schedule_temp[assigned_satellite].append((task.name, s_time, s_time + task.duration))
+                satellite_schedule_temp[assigned_satellite].append((task, s_time, s_time + task.duration))
                 newly_assigned_tasks.append(task)
 
         # Remove newly assigned tasks from tasks
@@ -200,6 +139,53 @@ def initialize_population(satellites, tasks, population_size):
     return population
 
 
+# Define the fitness function
+def fitness(schedule):
+    total = 0
+    for satellite in schedule:
+        for task in schedule[satellite]:
+            if task[0].priority == 4:
+                total += 50**3
+            elif task[0].priority == 3:
+                total += 50**2
+            elif task[0].priority == 2:
+                total += 50
+            else:
+                total += 1
+    return total
+
+# Define the mutation function
+def mutate(schedule):
+    return schedule
+
+'''
+cross over satellites
+
+mutate one of the satellite schedule:
+randomly put it non repeated remaining tasks to see if a better outcome can be acheived
+'''
+# Define the crossover function
+def crossover(schedule1, schedule2):
+    crossover_point = len(schedule1)//2
+
+    keys_to_exchange = list(schedule1.keys())[:crossover_point]
+    for key in keys_to_exchange:
+        schedule1[key], schedule2[key] = schedule2[key], schedule1[key]
+    return resolve_conflicts(schedule1), resolve_conflicts(schedule2)
+
+def resolve_conflicts(schedule):
+    existing_tasks=[]
+    for satellite in schedule:
+        tasks_to_remove = []
+        for task in schedule[satellite]:
+            if task[0].name not in existing_tasks:
+                existing_tasks.append(task[0].name)
+            else:
+                tasks_to_remove.append[task]
+        for task in tasks_to_remove:
+            schedule[satellite].remove[task]
+    return schedule
+
 def print_population(p):
     for i, dictionary in enumerate(p):
         print("Population" + str(i))
@@ -207,7 +193,7 @@ def print_population(p):
             print(satellite)
             temp = []
             for task in dictionary[satellite]:
-                temp.append(task)
+                temp.append((task[0].name, task[1], task[2]))
             print(temp)
 
 def genetic_algorithm(population, fitness_function, mutate_function, crossover_function, generations):
@@ -315,6 +301,8 @@ if __name__ == "__main__":
     print(len(population))
     print_population(population)
 
+    for i in population:
+        print(fitness(i))
     # genetic_algorithm(population, fitness, mutate, crossover, generations)
 
     # # Identify unassigned tasks
@@ -322,3 +310,7 @@ if __name__ == "__main__":
 
     # # Print schedule information
     # print_schedule_info(unassigned_tasks, {satellite.name: satellite.schedule for satellite in satellites})
+    dict1 = {'a':1, 'b':2, 'c':3, 'd':4}
+    dict2 = {'a':5, 'b':6, 'c':7, 'd':8}
+    x,y=crossover(dict1, dict2)
+    print(x,y)
