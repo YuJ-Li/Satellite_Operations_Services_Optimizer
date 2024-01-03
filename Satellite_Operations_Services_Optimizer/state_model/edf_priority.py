@@ -23,7 +23,7 @@ class Satellite:
     def __init__(self, name, activity_window, tle):
         self.name = name
         self.activity_window = activity_window
-        self.schedule = [] # list of ((#task_name, actual_start_time, real_end_time))
+        self.schedule = [] # list of ((task_object, actual_start_time, real_end_time))
         self.tle = tle
 
 
@@ -81,14 +81,14 @@ def edf(priority_list, satellites):
                         if task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
                             scheduled_start = empty_slot_start
                             scheduled_end = scheduled_start + task.duration
-                            satellite.schedule.insert(schedule_ptr, (task.name, scheduled_start, scheduled_end)) 
+                            satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
                             scheduled = True
                             # print(f'{task.name} is scheduled on {satellite.name}.')
                             break
                         elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
                             scheduled_start = task.start_time
                             scheduled_end = scheduled_start + task.duration
-                            satellite.schedule.insert(schedule_ptr, (task.name, scheduled_start, scheduled_end)) 
+                            satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
                             scheduled = True
                             # print(f'{task.name} is scheduled on {satellite.name}.')
                             break
@@ -322,15 +322,16 @@ all_tasks = imaging_tasks
 all_tasks.extend(maintenance_activities)
 priority_list = group_by_priority(all_tasks)
 
-# print_priority_list(priority_list)
-
 edf(priority_list, satellites)
 
 print('------------------')
+total=0
 for satellite in satellites:
     print(satellite.name, ':')
+    total += len(satellite.schedule)
     for t in satellite.schedule:
         print(t[0])
+print(f'{total} tasks got scheduled.')
  
 
 
