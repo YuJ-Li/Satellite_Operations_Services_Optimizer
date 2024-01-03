@@ -155,7 +155,32 @@ def fitness(schedule):
     return total
 
 # Define the mutation function
-def mutate(schedule):
+def mutate(schedule, tasks, satellites):
+    random_key = random.choice(list(schedule.keys()))
+    temp_tasks = tasks
+    scheduled_tasks=[]
+    for satellite in schedule:
+        for task in schedule[satellite]:
+            if satellite == random_key:
+                continue
+            else:
+                scheduled_tasks.append(task[0])
+    tasks_to_reschedule=[task for task in temp_tasks if task not in scheduled_tasks]
+    random.shuffle(tasks_to_reschedule)
+    new_schedule = []
+    for task in tasks_to_reschedule:
+        assigned_satellite = copy.deepcopy(task.satellite.name) if (task.satellite) else None
+        if assigned_satellite is not None and assigned_satellite != random_key:
+            continue
+        else:
+            s_time = detect_no_conflicts(new_schedule, task, get_satellite_by_name(satellites, random_key))
+            if (s_time):
+                assigned_satellite = random_key
+            else:
+                assigned_satellite = None
+        if assigned_satellite is not None and s_time is not None:
+            new_schedule.append((task, s_time, s_time + task.duration))      
+    schedule[random_key] = new_schedule
     return schedule
 
 '''
@@ -174,6 +199,8 @@ def crossover(schedule1, schedule2):
     return resolve_conflicts(schedule1), resolve_conflicts(schedule2)
 
 def resolve_conflicts(schedule):
+    # key_list = list(schedule.keys())
+    # random.shuffle(key_list)
     existing_tasks=[]
     for satellite in schedule:
         tasks_to_remove = []
@@ -181,9 +208,9 @@ def resolve_conflicts(schedule):
             if task[0].name not in existing_tasks:
                 existing_tasks.append(task[0].name)
             else:
-                tasks_to_remove.append[task]
+                tasks_to_remove.append(task)
         for task in tasks_to_remove:
-            schedule[satellite].remove[task]
+            schedule[satellite].remove(task)
     return schedule
 
 def print_population(p):
@@ -196,41 +223,35 @@ def print_population(p):
                 temp.append((task[0].name, task[1], task[2]))
             print(temp)
 
-def genetic_algorithm(population, fitness_function, mutate_function, crossover_function, generations):
+def print_schedule(s):
+    for satellite in s:
+        print(satellite)
+        temp = []
+        for task in s[satellite]:
+            temp.append((task[0].name, task[1], task[2]))
+        temp.sort(key=lambda x: (x[1], x[2]))
+        print(temp)
+        print(len(temp))
+
+
+def genetic_algorithm(population, fitness_function, mutate_function, crossover_function, generations, tasks, satellites):
     for generation in range(generations):  # Generations
-        if random.random() < 0.5:
-            # Mutation
-            if population:
-                schedule = random.choice(population)[:]
-                mutate_function(schedule)
+        for schedule in population:
+            if random.random() <= 1:
+                # Mutation
+                mutate_function(schedule, tasks, satellites)
+                population.remove(schedule)
                 population.append(schedule)
-            else:
-                # If the population is empty, generate a new random schedule
-                new_schedule = [task for satellite in satellites for task in satellite.schedule]
-                population.append(new_schedule)
-        else:
-            # Crossover
-            if len(population) >= 2:
-                schedule1, schedule2 = random.sample(population, 2)
-                offspring1, offspring2 = crossover_function(schedule1, schedule2)
-                population.append(offspring1)
-                population.append(offspring2)
+        # Crossover
+        schedule1, schedule2 = random.sample(population, 2)
+        offspring1, offspring2 = crossover_function(schedule1, schedule2)
+        population.append(offspring1)
+        population.append(offspring2)
 
         # Select the top 100 schedules based on fitness for the next generation
-        population = sorted(population, key=fitness_function, reverse=True)[:100]
+        population = sorted(population, key=fitness_function, reverse=True)[:len(population)]
 
-    return population
-
-def print_schedule_info(unassigned_tasks, satellite_schedules):
-    print("Unassigned Tasks:")
-    for task in unassigned_tasks:
-        print(f"Task {task.name}")
-
-    # Print satellite schedules
-    for satellite, schedule in satellite_schedules.items():
-        print(f"\nSatellite {satellite} Schedule:")
-        for task in schedule:
-            print(f"Task {task.name} from {task.start_time} to {task.end_time}")
+    return population[0]
 
 if __name__ == "__main__":
     time_window_start = datetime(2023, 10, 8, 00, 00, 00)
@@ -278,6 +299,7 @@ if __name__ == "__main__":
             data = json.load(file)
             # for simplicity, we only consider the priority, window (start and end time) and duration 
             name = "ImagingTask" + str(index)
+            print(file_path, name)
             priority = data["Priority"]
             start_time = convert_str_to_datetime(data["ImageStartTime"])
             end_time = convert_str_to_datetime(data["ImageEndTime"])
@@ -289,28 +311,27 @@ if __name__ == "__main__":
         index += 1
     print(f'There are {len(imaging_tasks)} Imaging tasks.')
 
-
+    all_tasks = imaging_tasks
+    all_tasks.extend(maintenance_activities)
 
     ############################### Initialize satellites ################################
 
-    population_size = 500
+    population_size = 200
     generations = 1000
 
-    population = initialize_population(satellites, maintenance_activities, population_size)
-    
-    print(len(population))
-    print_population(population)
-
-    for i in population:
-        print(fitness(i))
-    # genetic_algorithm(population, fitness, mutate, crossover, generations)
+    population = initialize_population(satellites, all_tasks, population_size)
+    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, all_tasks, satellites)
+    print_schedule(schedule)
 
     # # Identify unassigned tasks
     # unassigned_tasks = [task for task in maintenance_activities if task not in [t for sat in satellites for t in sat.schedule]]
 
     # # Print schedule information
     # print_schedule_info(unassigned_tasks, {satellite.name: satellite.schedule for satellite in satellites})
-    dict1 = {'a':1, 'b':2, 'c':3, 'd':4}
-    dict2 = {'a':5, 'b':6, 'c':7, 'd':8}
-    x,y=crossover(dict1, dict2)
-    print(x,y)
+
+
+
+    # dict1 = {'a':1, 'b':2, 'c':3, 'd':4}
+    # dict2 = {'a':5, 'b':6, 'c':7, 'd':8}
+    # x,y=crossover(dict1, dict2)
+    # print(x,y)
