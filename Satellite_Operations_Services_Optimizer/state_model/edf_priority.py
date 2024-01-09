@@ -1,13 +1,25 @@
 # from .repositories import *
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import datetime as dt
 from enum import Enum
-from skyfield.api import EarthSatellite, load, wgs84, Topos
+from skyfield.api import EarthSatellite, load, wgs84, Topos, utc
 import math
+from geopy.distance import geodesic
 
-
+# satellite constants
+SATELLITE_FULL_VIEW_ANGLE = 60
+# Image types constants
+SPOTLIGHT_WRITING_TIME = 120
+SPOTLIGHT_SIZE = 512
+SPOTLIGHT_DIMENSION = [10,10]
+MEDIUM_WRITING_TIME = 45
+MEDIUM_SIZE = 256
+MEDIUM_DIMENSION = [40,20]
+LOW_WRITING_TIME = 20
+LOW_SIZE = 128
+LOW_DIMENSION = [40,20]
 ###################################### CLASSES ###########################################
 
 class Task:
@@ -35,9 +47,9 @@ class ImageTask(Task):
         self.longitude = longitude
 
 class ImageType(Enum):
-    SPOTLIGHT = {'time_for_writing':120, 'size':512, 'dimension':[10,10]}
-    MEDIUM = {'time_for_writing':45, 'size':256, 'dimension':[40,20]}
-    LOW = {'time_for_writing':20, 'size':128, 'dimension':[40,20]}
+    SPOTLIGHT = {'time_for_writing':SPOTLIGHT_WRITING_TIME, 'size':SPOTLIGHT_SIZE, 'dimension':SPOTLIGHT_DIMENSION}
+    MEDIUM = {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
+    LOW = {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
 
 
 ##################################### EDF functions ######################################
@@ -160,62 +172,152 @@ def get_satellite_by_name(satellites, name):
 
 
 #####################################################################################
-#####################################################################################
+############################# satellite achievability #################################
 
-def check_task_achievability_on_satellite(imaging_tasks, satellites):
-    achievabilities = []
-    for task in imaging_tasks:
-        satellite_achievabilities = {}
-        for satellite in satellites:
-            tle_satellite = EarthSatellite(satellite.tle[1], satellite.tle[2], satellite.name)
+def find_four_corner_coor(imaging_task):
+    '''Given an imaging task (containing info of coordinates of imaging center, and image size),
+    output the coordinates of the four corners of the image.'''
+    # Calculate half-length and half-width
+    half_length = imaging_task.image_type.value['dimension'][0] / 2
+    half_width = imaging_task.image_type.value['dimension'][1] / 2
 
-            center_lat = task.latitude
-            center_lon = task.longitude
-            image_corner1,image_corner2,image_corner3,image_corner4 = find_corner_lat_lon(center_lat, center_lon, task.value["dimension"])
+    # Extract latitude and longitude of the center
+    center_lat, center_lon = imaging_task.latitude, imaging_task.longitude
 
-            # time1, events1 = tle_satellite.find_events(image_corner1, task.start_time, task.end_time, altitude_degrees=60)
-            # time2, events2 = tle_satellite.find_events(image_corner2, task.start_time, task.end_time, altitude_degrees=60)
-            # time3, events3 = tle_satellite.find_events(image_corner3, task.start_time, task.end_time, altitude_degrees=60)
-            # time4, events4 = tle_satellite.find_events(image_corner4, task.start_time, task.end_time, altitude_degrees=60)
+    distance = math.sqrt(half_width**2+half_length**2)
+    angle = math.degrees(math.atan(half_width/half_length))
+    print(distance, -angle, angle, angle-180, 180-angle)
 
-            # for t, e in zip(time, events):
-    return achievabilities
+    # Calculate the coordinates of the four corners
+    top_left = geodesic(kilometers=distance).destination(point=(center_lat, center_lon), bearing=-angle) # top left
+    top_right = geodesic(kilometers=distance).destination(point=(center_lat, center_lon), bearing=angle) # top right
+    bottom_left = geodesic(kilometers=distance).destination(point=(center_lat, center_lon), bearing=angle-180) # bottom left
+    bottom_right = geodesic(kilometers=distance).destination(point=(center_lat, center_lon), bearing=180-angle) # bottom right
+
+    # Return the coordinates of the four corners
+    # print(top_left.latitude, top_left.longitude) # top_left is a geodesic object
+    return top_left, top_right, bottom_left, bottom_right
+
+def get_time_window(satellite, point_on_earth, start_time, end_time, altitude_degree):
+    """
+    This method returns a list of time windows where each time windows includes time for : [acquisition of signal,
+    loss of signal]
+
+    @param satellite: a satellite created using define_satelite(TLE)
+    @param groundstation: a ground station created using define_groundstation
+    @param start_time: start time using load.timescale().utc()
+    @param end_time: end time using load.timescale().utc()
+    @param altitude_degree: a float number indicates the altitude degree
+    @return: a list of time windows(list)
+    """
+    time_windows = []
+    time, events = satellite.find_events(point_on_earth, start_time, end_time, altitude_degrees=altitude_degree)
+    index = 0
+    window = [None] * 2
+    for t, e in zip(time, events):
+        if index == 0:
+            if e != 0:
+                window[0] = start_time.utc_strftime('%Y %b %d %H:%M:%S')
+            if e == 2:
+                window[1] = t.utc_strftime('%Y %b %d %H:%M:%S')
+                time_windows.append(list(window))
+        elif index == len(time):
+            if e != 2:
+                window[1] = end_time.utc_strftime('%Y %b %d %H:%M:%S')
+                time_windows.append(list(window))
+        else:
+            if e == 0:
+                window[0] = t.utc_strftime('%Y %b %d %H:%M:%S')
+            elif e == 2:
+                window[1] = t.utc_strftime('%Y %b %d %H:%M:%S')
+                time_windows.append(list(window))
+        index += 1
+    return time_windows
+
+
+def find_satellite_achievability_of_point(satellite, imaging_task, latitude, longitude):
+    '''Given a satellite, an imaging task, and the coordinates of a point on the Earth, 
+    output the timeslots between the start time and end time of the task when this point is in the field of view of the satellite.'''
+    point_on_earth = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+    defined_satellite = EarthSatellite(satellite.tle[1], satellite.tle[2], satellite.tle[0])
+    ts = load.timescale()
+    st = ts.utc(datetime(imaging_task.start_time.year, imaging_task.start_time.month, imaging_task.start_time.day, imaging_task.start_time.hour, imaging_task.start_time.minute, imaging_task.start_time.second, tzinfo=timezone.utc))
+    et = ts.utc(datetime(imaging_task.end_time.year, imaging_task.end_time.month, imaging_task.end_time.day, imaging_task.end_time.hour, imaging_task.end_time.minute, imaging_task.end_time.second, tzinfo=timezone.utc))
+    time_windows = get_time_window(defined_satellite, point_on_earth, st, et, 90-SATELLITE_FULL_VIEW_ANGLE/2)
+    print(time_windows)
+    return time_windows
+
+def find_common_achievability(achievability_lists):
+    '''Given the list of satellite achievability of four corners of an image, 
+    output the timeslots when all four corners are in the field of view of the satellite.'''
+    return achievability_lists
+
+def find_satellite_achievabilities(satellite, imaging_task):
+    '''Given a satellite and an imaging task, 
+    output the timeslots when the imaging area is in the field of view of the satellite.'''
+    four_corners = find_four_corner_coor(imaging_task) # return a tuple of 4 geodesic objects 
+    achievability_lists = []
+    for corner in four_corners:
+        print(f"corner coordinates: {corner.latitude}, {corner.longitude}")
+        achievability_lists.append(find_satellite_achievability_of_point(satellite, imaging_task, corner.latitude, corner.longitude)) # append timeslots of a corner
+    common_achievabilities = find_common_achievability(achievability_lists)
+    return common_achievabilities
+
+
+# def check_task_achievability_on_satellite(imaging_tasks, satellites):
+#     achievabilities = []
+#     for task in imaging_tasks:
+#         satellite_achievabilities = {}
+#         for satellite in satellites:
+#             tle_satellite = EarthSatellite(satellite.tle[1], satellite.tle[2], satellite.name)
+
+#             center_lat = task.latitude
+#             center_lon = task.longitude
+#             image_corner1,image_corner2,image_corner3,image_corner4 = find_corner_lat_lon(center_lat, center_lon, task.value["dimension"])
+
+#             # time1, events1 = tle_satellite.find_events(image_corner1, task.start_time, task.end_time, altitude_degrees=60)
+#             # time2, events2 = tle_satellite.find_events(image_corner2, task.start_time, task.end_time, altitude_degrees=60)
+#             # time3, events3 = tle_satellite.find_events(image_corner3, task.start_time, task.end_time, altitude_degrees=60)
+#             # time4, events4 = tle_satellite.find_events(image_corner4, task.start_time, task.end_time, altitude_degrees=60)
+
+#             # for t, e in zip(time, events):
+#     return achievabilities
     
 
-def find_corner_lat_lon(center_lat, center_lon, dimension):
-    # https://en.wikipedia.org/wiki/Latitude
-    # N,E:+
-    # S,W:-
-    # Longitude: km divided by 111.320 
-    corner_east = longitude_normalization(center_lon + (dimension[1]/2)/111.320)
-    corner_west = longitude_normalization(center_lon - (dimension[1]/2)/111.320)
-    # Latitude: km divided by 110.574 
-    corner_north = center_lat + (dimension[0]/2)/110.574 
-    corner_south = center_lat - (dimension[0]/2)/110.574
-    if corner_north>90:
-        corner_north = 90-(corner_north-90)
-        # flip longtitude
-        corner_east2 = longitude_normalization(corner_east + 180)
-        corner_west2 = longitude_normalization(corner_west + 180)
-        # return corners (north-east, north-west, south-east, south-west)
-        return [(corner_north, corner_east2),(corner_north, corner_west2),(corner_south, corner_east),(corner_south, corner_west)]
-    if corner_south<-90:
-        corner_south = -90 - (corner_south + 90)
-        # flip longitude
-        corner_east2 = longitude_normalization(corner_east + 180)
-        corner_west2 = longitude_normalization(corner_west + 180)
-        # return corners (north-east, north-west, south-east, south-west)   
-        return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east2),(corner_south, corner_west2)]
-    return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east),(corner_south, corner_west)]
+# def find_corner_lat_lon(center_lat, center_lon, dimension):
+#     # https://en.wikipedia.org/wiki/Latitude
+#     # N,E:+
+#     # S,W:-
+#     # Longitude: km divided by 111.320 
+#     corner_east = longitude_normalization(center_lon + (dimension[1]/2)/111.320)
+#     corner_west = longitude_normalization(center_lon - (dimension[1]/2)/111.320)
+#     # Latitude: km divided by 110.574 
+#     corner_north = center_lat + (dimension[0]/2)/110.574 
+#     corner_south = center_lat - (dimension[0]/2)/110.574
+#     if corner_north>90:
+#         corner_north = 90-(corner_north-90)
+#         # flip longtitude
+#         corner_east2 = longitude_normalization(corner_east + 180)
+#         corner_west2 = longitude_normalization(corner_west + 180)
+#         # return corners (north-east, north-west, south-east, south-west)
+#         return [(corner_north, corner_east2),(corner_north, corner_west2),(corner_south, corner_east),(corner_south, corner_west)]
+#     if corner_south<-90:
+#         corner_south = -90 - (corner_south + 90)
+#         # flip longitude
+#         corner_east2 = longitude_normalization(corner_east + 180)
+#         corner_west2 = longitude_normalization(corner_west + 180)
+#         # return corners (north-east, north-west, south-east, south-west)   
+#         return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east2),(corner_south, corner_west2)]
+#     return [(corner_north, corner_east),(corner_north, corner_west),(corner_south, corner_east),(corner_south, corner_west)]
 
 
-def longitude_normalization(degree):
-    if degree > 180:
-        return degree % 180 - 180
-    elif degree < -180:
-        return 180 - abs(degree) % 180
-    else: 
-        return degree
+# def longitude_normalization(degree):
+#     if degree > 180:
+#         return degree % 180 - 180
+#     elif degree < -180:
+#         return 180 - abs(degree) % 180
+#     else: 
+#         return degree
 
 
 
@@ -322,23 +424,21 @@ all_tasks = imaging_tasks
 all_tasks.extend(maintenance_activities)
 priority_list = group_by_priority(all_tasks)
 
-edf(priority_list, satellites)
+# edf(priority_list, satellites)
 
-print('------------------')
-total=0
-for satellite in satellites:
-    print(satellite.name, ':')
-    total += len(satellite.schedule)
-    for t in satellite.schedule:
-        print(t[0])
-print(f'{total} tasks got scheduled.')
+# print('------------------')
+# total=0
+# for satellite in satellites:
+#     print(satellite.name, ':')
+#     total += len(satellite.schedule)
+#     for t in satellite.schedule:
+#         print(t[0])
+# print(f'{total} tasks got scheduled.')
  
 
 
-
+find_satellite_achievabilities(satellites[0], imaging_tasks[0])
 
 
 # check satellite availibility (fov)
-# target satellite !
-# all satellites start and end at the same time !
-# distribution equally !
+# take care of capacity of satellites
