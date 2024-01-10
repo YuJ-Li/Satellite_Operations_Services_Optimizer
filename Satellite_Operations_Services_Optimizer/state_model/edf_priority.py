@@ -11,9 +11,9 @@ from geopy.distance import geodesic
 # satellite constants
 SATELLITE_FULL_VIEW_ANGLE = 60
 # Image types constants
-SPOTLIGHT_WRITING_TIME = 120
-SPOTLIGHT_SIZE = 512
-SPOTLIGHT_DIMENSION = [10,10]
+HIGH_WRITING_TIME = 120
+HIGH_SIZE = 512
+HIGH_DIMENSION = [10,10]
 MEDIUM_WRITING_TIME = 45
 MEDIUM_SIZE = 256
 MEDIUM_DIMENSION = [40,20]
@@ -47,7 +47,7 @@ class ImageTask(Task):
         self.longitude = longitude
 
 class ImageType(Enum):
-    SPOTLIGHT = {'time_for_writing':SPOTLIGHT_WRITING_TIME, 'size':SPOTLIGHT_SIZE, 'dimension':SPOTLIGHT_DIMENSION}
+    HIGH = {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
     MEDIUM = {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
     LOW = {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
 
@@ -161,8 +161,8 @@ def get_image_type(image_type):
             return ImageType.LOW
         case "Medium":
             return ImageType.MEDIUM
-        case "Spotlight":
-            return ImageType.SPOTLIGHT
+        case "High":
+            return ImageType.HIGH
         
 def get_satellite_by_name(satellites, name):
     for satellite in satellites:
@@ -186,7 +186,7 @@ def find_four_corner_coor(imaging_task):
 
     distance = math.sqrt(half_width**2+half_length**2)
     angle = math.degrees(math.atan(half_width/half_length))
-    print(distance, -angle, angle, angle-180, 180-angle)
+    # print(distance, -angle, angle, angle-180, 180-angle)
 
     # Calculate the coordinates of the four corners
     top_left = geodesic(kilometers=distance).destination(point=(center_lat, center_lon), bearing=-angle) # top left
@@ -212,12 +212,16 @@ def get_time_window(satellite, point_on_earth, start_time, end_time, altitude_de
     """
     time_windows = []
     time, events = satellite.find_events(point_on_earth, start_time, end_time, altitude_degrees=altitude_degree)
+    # print("!!!!!")
+    # print(time, events)
     index = 0
     window = [None] * 2
     for t, e in zip(time, events):
         if index == 0:
             if e != 0:
                 window[0] = start_time.utc_strftime('%Y %b %d %H:%M:%S')
+            else:
+                window[0] = t.utc_strftime('%Y %b %d %H:%M:%S')
             if e == 2:
                 window[1] = t.utc_strftime('%Y %b %d %H:%M:%S')
                 time_windows.append(list(window))
@@ -238,19 +242,53 @@ def get_time_window(satellite, point_on_earth, start_time, end_time, altitude_de
 def find_satellite_achievability_of_point(satellite, imaging_task, latitude, longitude):
     '''Given a satellite, an imaging task, and the coordinates of a point on the Earth, 
     output the timeslots between the start time and end time of the task when this point is in the field of view of the satellite.'''
-    point_on_earth = Topos(latitude_degrees=latitude, longitude_degrees=longitude)
-    defined_satellite = EarthSatellite(satellite.tle[1], satellite.tle[2], satellite.tle[0])
+    point_on_earth = Topos(latitude_degrees=latitude, longitude_degrees=longitude, elevation_m=0)
+    defined_satellite = EarthSatellite(satellite.tle[0], satellite.tle[1], satellite.name)
     ts = load.timescale()
-    st = ts.utc(datetime(imaging_task.start_time.year, imaging_task.start_time.month, imaging_task.start_time.day, imaging_task.start_time.hour, imaging_task.start_time.minute, imaging_task.start_time.second, tzinfo=timezone.utc))
-    et = ts.utc(datetime(imaging_task.end_time.year, imaging_task.end_time.month, imaging_task.end_time.day, imaging_task.end_time.hour, imaging_task.end_time.minute, imaging_task.end_time.second, tzinfo=timezone.utc))
+    st = ts.utc(imaging_task.start_time.year, imaging_task.start_time.month, imaging_task.start_time.day, imaging_task.start_time.hour, imaging_task.start_time.minute, imaging_task.start_time.second)
+    et = ts.utc(imaging_task.end_time.year, imaging_task.end_time.month, imaging_task.end_time.day, imaging_task.end_time.hour, imaging_task.end_time.minute, imaging_task.end_time.second)
+    # print(st, et)
     time_windows = get_time_window(defined_satellite, point_on_earth, st, et, 90-SATELLITE_FULL_VIEW_ANGLE/2)
-    print(time_windows)
+    # print(time_windows)
+    
     return time_windows
+
+def check_overlap(timeslot1, timeslot2):
+    early_et = None, None # start time and end time of the task that begins first
+    late_st, late_et = None, None, # start time and end time of the task that begins later
+    if timeslot1[0] <= timeslot2[0]: # task 1 begins first
+        early_et = timeslot1[1]
+        late_st, late_et = timeslot2[0], timeslot2[1]
+    else: # task 2 begins first
+        early_et = timeslot2[1]
+        late_st, late_et = timeslot1[0], timeslot1[1]
+    
+    # find overlaps
+    if late_st >= early_et: # the later task begins completely after the earlier task
+        return None # no overlapping
+    if early_et <= late_et: # the task that begins first also ends first
+        return (late_st, early_et)
+    else: # the task that begins first ends after the task that begins late
+        return (late_st, late_et)
+
+
 
 def find_common_achievability(achievability_lists):
     '''Given the list of satellite achievability of four corners of an image, 
     output the timeslots when all four corners are in the field of view of the satellite.'''
-    return achievability_lists
+    common_achievabilities = []
+    for x in achievability_lists[0]:
+        for y in achievability_lists[1]:
+            overlap12 = check_overlap(x,y)
+            if overlap12:
+                for u in achievability_lists[2]:
+                    overlap123 = check_overlap(overlap12, u)
+                    if overlap123:
+                        for v in achievability_lists[3]:
+                            overlap1234 = check_overlap(overlap123, v)
+                            if overlap1234:
+                                common_achievabilities.append(overlap1234)
+    return common_achievabilities
 
 def find_satellite_achievabilities(satellite, imaging_task):
     '''Given a satellite and an imaging task, 
@@ -258,9 +296,10 @@ def find_satellite_achievabilities(satellite, imaging_task):
     four_corners = find_four_corner_coor(imaging_task) # return a tuple of 4 geodesic objects 
     achievability_lists = []
     for corner in four_corners:
-        print(f"corner coordinates: {corner.latitude}, {corner.longitude}")
+        # print(f"corner coordinates: {corner.latitude}, {corner.longitude}")
         achievability_lists.append(find_satellite_achievability_of_point(satellite, imaging_task, corner.latitude, corner.longitude)) # append timeslots of a corner
     common_achievabilities = find_common_achievability(achievability_lists)
+    # print(common_achievabilities)
     return common_achievabilities
 
 
@@ -324,11 +363,11 @@ def find_satellite_achievabilities(satellite, imaging_task):
 
 
 ############################### Initialize satellites ################################
-with open('/app/TLE/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read()
-with open('/app/TLE/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read()
-with open('/app/TLE/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read()
-with open('/app/TLE/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read()
-with open('/app/TLE/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read()
+with open('/app/TLE/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+with open('/app/TLE/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+with open('/app/TLE/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+with open('/app/TLE/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+with open('/app/TLE/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
 
 time_window_start = datetime(2023, 10, 8, 00, 00, 00)
 time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
@@ -421,8 +460,8 @@ print('----------------- SCHEDULING START -----------------')
 
 # TODO 3: use your scheduling algorithm to schedule tasks in BOTH lists on the five satellites
 all_tasks = imaging_tasks
-all_tasks.extend(maintenance_activities)
-priority_list = group_by_priority(all_tasks)
+# all_tasks.extend(maintenance_activities)
+# priority_list = group_by_priority(all_tasks)
 
 # edf(priority_list, satellites)
 
@@ -436,9 +475,18 @@ priority_list = group_by_priority(all_tasks)
 # print(f'{total} tasks got scheduled.')
  
 
-
-find_satellite_achievabilities(satellites[0], imaging_tasks[0])
-
+num_achievable_task = 0
+for it in imaging_tasks:
+    achievable = False
+    print("Task name: ", it.name)
+    for s in satellites:
+        common_achievabilities = find_satellite_achievabilities(s, it)
+        if len(common_achievabilities)!=0:
+            achievable = True
+            print(f"{s.name}: {(common_achievabilities)}")
+    if achievable: num_achievable_task+=1
+print(num_achievable_task)
 
 # check satellite availibility (fov)
+# take care of revisit frequency sample 24
 # take care of capacity of satellites
