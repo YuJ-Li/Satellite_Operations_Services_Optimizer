@@ -5,6 +5,7 @@ import json
 import os
 import copy
 from enum import Enum
+from scheduling_algorithm import *
 
 def random_date(start, end):
     """
@@ -200,6 +201,12 @@ if __name__ == "__main__":
     population_size = 200
     generations = 1000
 
-    population = initialize_population(satellites, all_tasks, population_size)
-    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, all_tasks, satellites)
+    ############# For maintenance_activities#############
+    population = initialize_population(satellites1, maintenance_activities, population_size)
+    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, maintenance_activities, satellites1)
+    print_schedule(schedule)
+
+    ############# For imaging_tasks######################
+    population = initialize_population(satellites2, imaging_tasks, population_size)
+    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, imaging_tasks, satellites2)
     print_schedule(schedule)
