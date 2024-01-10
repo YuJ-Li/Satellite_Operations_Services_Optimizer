@@ -39,7 +39,7 @@ class Satellite:
 
 
 class ImageTask(Task):
-    def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None):
+    def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None, achievability = None):
         super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
         self.image_type = image_type
         self.latitude = latitude
@@ -284,9 +284,18 @@ def initialize_satellites_tasks():
             lon = data["Longitude"]
             # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
             # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            imaging_tasks.append(ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
+            new_imaging_task = ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
+            # find satellites find_satellite_achievabilities for this imaging task
+            achievabilities = {}
+            for s in satellites2:
+                achievabilities[s.name] = find_satellite_achievabilities(s,new_imaging_task)
+            new_imaging_task.achievability = achievabilities
+            imaging_tasks.append(new_imaging_task)
         index += 1
     print(f'There are {len(imaging_tasks)} Imaging tasks.')
 
     return satellites1, satellites2, maintenance_activities, imaging_tasks
 
+
+_,_,_, imaging_tasks = initialize_satellites_tasks()
+print(imaging_tasks[2].achievability)
