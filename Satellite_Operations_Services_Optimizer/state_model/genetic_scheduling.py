@@ -6,67 +6,6 @@ import os
 import copy
 from enum import Enum
 
-class Task:
-    def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
-        self.name = name
-        self.start_time = start_time
-        self.end_time = end_time
-        self.duration = duration
-        self.priority = priority # imaging tasks: priority from 3 to 1 = from high to low; maintenance activity: priority = 4 (highest)
-        self.satellite = satellite # to be determined by the scheduling algorithm
-
-class ImageTask(Task):
-    def __init__(self, image_type, name, start_time, end_time, duration, priority, satellite = None):
-        super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
-        self.image_type = image_type
-
-class ImageType(Enum):
-    SPOTLIGHT = {'time_for_writing':120, 'size':512, 'dimension':[10,10]}
-    MEDIUM = {'time_for_writing':45, 'size':256, 'dimension':[40,20]}
-    LOW = {'time_for_writing':20, 'size':128, 'dimension':[40,20]}
-
-class Satellite:
-    def __init__(self, name, activity_window):
-        self.name = name
-        self.activity_window = activity_window
-        self.schedule = [] # list of ((#task_name, actual_start_time, real_end_time))
-
-
-def read_directory(path):
-    json_files = [f.path for f in os.scandir(path) if f.is_file() and f.name.endswith(('.json', '.JSON'))]
-    return json_files
-
-def get_image_type(image_type):
-    match image_type:
-        case "Low":
-            return ImageType.LOW
-        case "Medium":
-            return ImageType.MEDIUM
-        case "Spotlight":
-            return ImageType.SPOTLIGHT
-        
-def get_satellite_by_name(satellites, name):
-    for satellite in satellites:
-        if satellite.name == name:
-            return satellite
-    return None
-
-def convert_str_to_datetime(datetime_str):
-    date_and_time = datetime_str.split('T')
-    arr = date_and_time[0].split('-')
-    arr.extend(date_and_time[1].split(':'))
-    datetime_obj = datetime(int(arr[0]),int(arr[1]),int(arr[2]),int(arr[3]),int(arr[4]),int(arr[5]))
-    return datetime_obj
-
-def get_imaging_writing_duration(ImageType):
-    match ImageType:
-        case "Low":
-            return 20 # unit: seconds
-        case "Medium":
-            return 45 # unit: seconds
-        case "Spotlight":
-            return 120 # unit: seconds
-
 def random_date(start, end):
     """
     This function will return a random datetime between two datetime 
@@ -254,66 +193,8 @@ def genetic_algorithm(population, fitness_function, mutate_function, crossover_f
     return population[0]
 
 if __name__ == "__main__":
-    time_window_start = datetime(2023, 10, 8, 00, 00, 00)
-    time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
-    satellites = [Satellite('SOSO-1',(time_window_start,time_window_end)),
-                Satellite('SOSO-2',(time_window_start,time_window_end)),
-                Satellite('SOSO-3',(time_window_start,time_window_end)),
-                Satellite('SOSO-4',(time_window_start,time_window_end)),
-                Satellite('SOSO-5',(time_window_start,time_window_end))]
 
-
-    maintenance_path = "/app/order_samples/group1" # group 1 is a set of maintenance activities
-    maintenance_json_files = read_directory(maintenance_path)
-    print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
-
-    maintenance_activities = []
-    index = 1 # for the task ID
-    for json_file in maintenance_json_files:
-        file_path = os.path.join(maintenance_path, json_file)
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            # for simplicity, we only consider the window (start and end time) and duration 
-            name = data["Activity"] + str(index)
-            target = get_satellite_by_name(satellites, data["Target"])
-            start_time = convert_str_to_datetime(data["Window"]["Start"])
-            end_time = convert_str_to_datetime(data["Window"]["End"])
-            duration = dt.timedelta(seconds=int(data["Duration"]))
-            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
-            # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
-        index += 1
-    print(f'There are {len(maintenance_activities)} maintenance activities.')
-
-    ''' process imaging tasks '''
-    imaging_path = "/app/order_samples/group2" # group 2 is a set of imaging tasks
-    imaging_json_files = read_directory(imaging_path)
-    print(f'{imaging_path} contains {len(imaging_json_files)} files.')
-
-    imaging_tasks = []
-    index = 1 # for the task ID
-    for json_file in imaging_json_files:
-        file_path = os.path.join(imaging_path, json_file)
-        with open(file_path, 'r') as file:
-            # print(file_path)
-            data = json.load(file)
-            # for simplicity, we only consider the priority, window (start and end time) and duration 
-            name = "ImagingTask" + str(index)
-            print(file_path, name)
-            priority = data["Priority"]
-            start_time = convert_str_to_datetime(data["ImageStartTime"])
-            end_time = convert_str_to_datetime(data["ImageEndTime"])
-            image_type = get_image_type(data["ImageType"])
-            duration = dt.timedelta(seconds=int(image_type.value['time_for_writing']))
-            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
-            # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            imaging_tasks.append(ImageTask(image_type=image_type, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority))
-        index += 1
-    print(f'There are {len(imaging_tasks)} Imaging tasks.')
-
-    all_tasks = imaging_tasks
-    all_tasks.extend(maintenance_activities)
-
+    satellites1, satellites2, maintenance_activities, imaging_tasks = initialize_satellites_tasks()
     ############################### Initialize satellites ################################
 
     population_size = 200
@@ -322,16 +203,3 @@ if __name__ == "__main__":
     population = initialize_population(satellites, all_tasks, population_size)
     schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, all_tasks, satellites)
     print_schedule(schedule)
-
-    # # Identify unassigned tasks
-    # unassigned_tasks = [task for task in maintenance_activities if task not in [t for sat in satellites for t in sat.schedule]]
-
-    # # Print schedule information
-    # print_schedule_info(unassigned_tasks, {satellite.name: satellite.schedule for satellite in satellites})
-
-
-
-    # dict1 = {'a':1, 'b':2, 'c':3, 'd':4}
-    # dict2 = {'a':5, 'b':6, 'c':7, 'd':8}
-    # x,y=crossover(dict1, dict2)
-    # print(x,y)
