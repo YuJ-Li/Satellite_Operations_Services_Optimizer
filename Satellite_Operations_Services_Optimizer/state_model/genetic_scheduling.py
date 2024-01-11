@@ -46,9 +46,23 @@ def detect_no_conflicts(schedule, task, satellite):
 def initialize_population(satellites, tasks, population_size):
     s_time = None
     temp_tasks = copy.deepcopy(tasks)
+    real_tasks=[]
+    for t in temp_tasks:
+        if hasattr(t, 'achievability'):
+            valid_keys = [key for key, value in t.achievability.items() if value != []]
+            if valid_keys:
+                random_sat = random.choice(valid_keys)
+                random_t = random.choice(t.achievability[random_sat])
+                t.start_time = datetime.strptime(random_t[0], "%Y %b %d %H:%M:%S")
+                t.end_time = datetime.strptime(random_t[1], "%Y %b %d %H:%M:%S")
+                real_tasks.append(t)
+            else:
+                continue
+        else:
+            real_tasks.append(t)
     population = []
     for _ in range(population_size):
-        tasks = temp_tasks
+        tasks = real_tasks
         random.shuffle(tasks)
         newly_assigned_tasks = []
         satellite_schedule_temp = {}
@@ -76,7 +90,7 @@ def initialize_population(satellites, tasks, population_size):
         tasks = [task for task in tasks if task not in newly_assigned_tasks]
         population.append(satellite_schedule_temp)
         
-    return population
+    return population, real_tasks
 
 
 # Define the fitness function
@@ -202,11 +216,11 @@ if __name__ == "__main__":
     generations = 1000
 
     ############# For maintenance_activities#############
-    population = initialize_population(satellites1, maintenance_activities, population_size)
-    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, maintenance_activities, satellites1)
-    print_schedule(schedule)
+    # population = initialize_population(satellites1, maintenance_activities, population_size)
+    # schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, maintenance_activities, satellites1)
+    # print_schedule(schedule)
 
     ############# For imaging_tasks######################
-    population = initialize_population(satellites2, imaging_tasks, population_size)
-    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, imaging_tasks, satellites2)
+    population, real_tasks = initialize_population(satellites2, imaging_tasks, population_size)
+    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, real_tasks, satellites2)
     print_schedule(schedule)
