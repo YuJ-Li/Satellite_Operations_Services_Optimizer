@@ -156,8 +156,10 @@ def find_satellite_achievability_of_point(satellite, imaging_task, latitude, lon
     et = ts.utc(imaging_task.end_time.year, imaging_task.end_time.month, imaging_task.end_time.day, imaging_task.end_time.hour, imaging_task.end_time.minute, imaging_task.end_time.second)
     # print(st, et)
     time_windows = get_time_window(defined_satellite, point_on_earth, st, et, 90-SATELLITE_FULL_VIEW_ANGLE/2)
-    # print(time_windows)
-    
+
+    for i,(start_time,end_time) in enumerate(time_windows):
+        time_windows[i][0] = datetime.strptime(start_time, "%Y %b %d %H:%M:%S")
+        time_windows[i][1] = datetime.strptime(end_time, "%Y %b %d %H:%M:%S")
     return time_windows
 
 def check_overlap(timeslot1, timeslot2):
@@ -297,5 +299,12 @@ def initialize_satellites_tasks():
     return satellites1, satellites2, maintenance_activities, imaging_tasks
 
 
-_,_,_, imaging_tasks = initialize_satellites_tasks()
-print(imaging_tasks[2].achievability)
+# _,_,_,imaging_tasks = initialize_satellites_tasks()
+# can = 0
+# for task in imaging_tasks:
+#     valid_keys = [key for key, value in task.achievability.items() if value != []]
+#     if valid_keys: can+=1
+#     print(valid_keys)
+# print(can)
+# print(type(imaging_tasks[2].achievability['SOSO-1'][0][0]))
+# print(imaging_tasks[2].achievability['SOSO-1'][0][0])
