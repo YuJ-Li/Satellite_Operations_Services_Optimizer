@@ -290,7 +290,7 @@ def initialize_satellites_tasks():
             # find satellites find_satellite_achievabilities for this imaging task
             achievabilities = {}
             for s in satellites2:
-                achievabilities[s.name] = find_satellite_achievabilities(s,new_imaging_task)
+                achievabilities[s] = find_satellite_achievabilities(s,new_imaging_task)
             new_imaging_task.achievability = achievabilities
             imaging_tasks.append(new_imaging_task)
         index += 1
