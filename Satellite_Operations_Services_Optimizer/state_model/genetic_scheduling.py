@@ -53,8 +53,8 @@ def initialize_population(satellites, tasks, population_size):
             if valid_keys:
                 random_sat = random.choice(valid_keys)
                 random_t = random.choice(t.achievability[random_sat])
-                t.start_time = datetime.strptime(random_t[0], "%Y %b %d %H:%M:%S")
-                t.end_time = datetime.strptime(random_t[1], "%Y %b %d %H:%M:%S")
+                t.start_time = random_t[0]
+                t.end_time = random_t[1]
                 real_tasks.append(t)
             else:
                 continue
@@ -216,9 +216,9 @@ if __name__ == "__main__":
     generations = 1000
 
     ############# For maintenance_activities#############
-    # population = initialize_population(satellites1, maintenance_activities, population_size)
-    # schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, maintenance_activities, satellites1)
-    # print_schedule(schedule)
+    population, real_tasks = initialize_population(satellites1, maintenance_activities, population_size)
+    schedule = genetic_algorithm(population, fitness, mutate, crossover, generations, real_tasks, satellites1)
+    print_schedule(schedule)
 
     ############# For imaging_tasks######################
     population, real_tasks = initialize_population(satellites2, imaging_tasks, population_size)
