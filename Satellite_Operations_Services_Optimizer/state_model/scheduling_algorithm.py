@@ -214,11 +214,26 @@ def find_satellite_achievabilities(satellite, imaging_task):
 
 def initialize_satellites_tasks():
     ############################### Initialize satellites group 1 ################################
-    with open('/app/TLE/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
-    with open('/app/TLE/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
-    with open('/app/TLE/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
-    with open('/app/TLE/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
-    with open('/app/TLE/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+    # for TLE 1
+    # with open('/app/TLE/tle1/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+    # with open('/app/TLE/tle1/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+    # with open('/app/TLE/tle1/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+    # with open('/app/TLE/tle1/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+    # with open('/app/TLE/tle1/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+
+    # for TLE 2
+    # with open('/app/TLE/tle2/SOSO-6_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+    # with open('/app/TLE/tle2/SOSO-7_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+    # with open('/app/TLE/tle2/SOSO-8_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+    # with open('/app/TLE/tle2/SOSO-9_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+    # with open('/app/TLE/tle2/SOSO-10_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+
+    # for TLE 3
+    with open('/app/TLE/tle3/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
 
     time_window_start = datetime(2023, 10, 8, 00, 00, 00)
     time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
@@ -254,8 +269,17 @@ def initialize_satellites_tasks():
 
 
     ############################### Initialize satellites group 2 ################################
-    time_window_start = datetime(2023, 11, 18, 00, 00, 00)
-    time_window_end = datetime(2023, 11, 18, 23, 59, 59) 
+    # for group 2 images
+    # time_window_start = datetime(2023, 11, 18, 00, 00, 00)
+    # time_window_end = datetime(2023, 11, 18, 23, 59, 59) 
+
+    # for group 3 old images
+    # time_window_start = datetime(2023, 10, 8, 00, 00, 00)
+    # time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
+
+    # for group 4 new images
+    time_window_start = datetime(2023, 10, 2, 00, 00, 00)
+    time_window_end = datetime(2023, 10, 2, 23, 59, 59) 
 
     satellites2 = [Satellite('SOSO-1',(time_window_start,time_window_end), tle1),
                 Satellite('SOSO-2',(time_window_start,time_window_end), tle2),
@@ -264,7 +288,7 @@ def initialize_satellites_tasks():
                 Satellite('SOSO-5',(time_window_start,time_window_end), tle5)]
 
     ############################### process imaging tasks ###############################
-    imaging_path = "/app/order_samples/group2" # group 2 is a set of imaging tasks
+    imaging_path = "/app/order_samples/group4_newest" # group 2 is a set of imaging tasks
     imaging_json_files = read_directory(imaging_path)
     print(f'{imaging_path} contains {len(imaging_json_files)} files.')
 
@@ -306,5 +330,6 @@ def initialize_satellites_tasks():
 #     if valid_keys: can+=1
 #     print(valid_keys)
 # print(can)
+
 # print(type(imaging_tasks[2].achievability['SOSO-1'][0][0]))
 # print(imaging_tasks[2].achievability['SOSO-1'][0][0])

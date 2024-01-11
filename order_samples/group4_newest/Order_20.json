@@ -1,0 +1,12 @@
+{
+   "Latitude": 36.5973039894923,
+   "Longitude": 29.337931929250146,
+   "Priority": 2,
+   "ImageType": "Medium",
+   "ImageStartTime": "2023-10-02T18:38:50",
+   "ImageEndTime": "2023-10-02T21:53:22",
+   "DeliveryTime": "2023-10-03T01:53:22",
+   "Recurrence": {
+      "Revist": "False"
+   }
+}
