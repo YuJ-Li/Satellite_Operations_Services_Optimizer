@@ -33,7 +33,9 @@ def edf_imaging(priority_list, satellites):
             if valid_keys is None: # if this task is not in the FOV of any satellite within its available time window
                 unscheduled_tasks.append(task) # consider it as non schedulable
                 continue 
-
+            # sort the satellites by increasing number of tasks scheduled on them to ensure satellites are equally used
+            valid_keys = sort_satellites_by_number_of_tasks(valid_keys)
+            
             for satellite in valid_keys:
                 if task.satellite is not None and task.satellite != satellite: continue
                 schedule_ptr = -1
@@ -52,14 +54,14 @@ def edf_imaging(priority_list, satellites):
             if not scheduled:
                 unscheduled_tasks.append(task)
                 # print(f'Failed to schedule {task.name}.')
-            else:
-                # if a task got scheduled, re-sort the satellites by increasing number of tasks scheduled on them
-                # to ensure satellites are equally used
-                satellites = sort_satellites_by_number_of_tasks(satellites)
+            # else:
+            #     # if a task got scheduled, re-sort the satellites by increasing number of tasks scheduled on them
+            #     # to ensure satellites are equally used
+            #     satellites = sort_satellites_by_number_of_tasks(satellites)
 
     print(f'{len(unscheduled_tasks)} tasks failed to be scheduled: ')
     for t in unscheduled_tasks:
-        print(t.name)
+        print(f"{t.name}")
     
 def check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, imaging_task, satellite_achievability):
     '''Given the start time and end time of an empty timeslot, check if the given imaging task can be fitted in the schedule of a satellite.
@@ -186,7 +188,7 @@ print(f'{total} imaging tasks got scheduled.')
 
 
 
-print(f"{imaging_tasks[1].name}: \n {imaging_tasks[1].achievability}")
+# print(f"{imaging_tasks[1].name}: \n {imaging_tasks[1].achievability}")
 
 
 # check satellite availibility (fov)
