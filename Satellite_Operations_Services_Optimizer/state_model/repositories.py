@@ -457,4 +457,4 @@ def delete_outage_by_id(outageId):
         return HttpResponseBadRequest('outage not found.')
 
 ###############controller for satellite scheduling##########################
-
+    

@@ -94,65 +94,65 @@ class ImageTaskControllerTest(TestCase):
     def test_add_one_imageTask_schedule_into_database(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         imageTask = get_imagingTask_by_id("imageTask1")
         self.assertEqual(imageTask.TaskID,"imageTask1")
     def test_get_all_imageTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask3",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask4",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask3",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask4",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         self.assertEqual(len(get_all_imagingTask()),4)
     def test_delete_imageTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask3",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask4",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask3",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask4",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         delete_imagingTask_by_id("imageTask3")
         self.assertEqual(len(get_all_imagingTask()),3)
     def test_update_imageTask_info(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        updata_imagingTask_info(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 12,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        updata_imagingTask_info(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 12,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         self.assertEqual(get_imagingTask_by_id("imageTask1").imagingRegionLongitude,12)
     def test__imageTask_SatelliteSchedule_relationship(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").imaging_tasks.get(TaskID = "imageTask1").TaskID,"imageTask1")
     
 class MaintenanceTaskControllerTest(TestCase):
     def test_add_one_maintenanceTask_schedule_into_database(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
         mt = get_maintenanceTask_by_id(TaskID = "maintenanceTask1")
         self.assertEqual(mt.TaskID,"maintenanceTask1")
     def test_get_all_maintenanceTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_maintenanceTask(TaskID = "maintenanceTask2",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_maintenanceTask(TaskID = "maintenanceTask3",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_maintenanceTask(TaskID = "maintenanceTask4",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        add_maintenanceTask(TaskID = "maintenanceTask2",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        add_maintenanceTask(TaskID = "maintenanceTask3",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        add_maintenanceTask(TaskID = "maintenanceTask4",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
         self.assertEqual(len(get_all_maintenanceTask()),4)
     def test_update_maintenanceTask_info(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        updata_maintenanceTask_info(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = False,schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        updata_maintenanceTask_info(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = False,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
         self.assertEqual(get_maintenanceTask_by_id("maintenanceTask1").payloadOperationAffected,False)
     def test_delete_maintenanceTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_maintenanceTask(TaskID = "maintenanceTask2",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_maintenanceTask(TaskID = "maintenanceTask3",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_maintenanceTask(TaskID = "maintenanceTask1",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        add_maintenanceTask(TaskID = "maintenanceTask2",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
+        add_maintenanceTask(TaskID = "maintenanceTask3",revisitFrequency = 2,priority=10,target = "target1",timeWindow = timezone.now(),duration =timedelta(hours=1, minutes=15), payloadOperationAffected = True,schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now())
         delete_maintenanceTask_by_id("maintenanceTask3")
         self.assertEqual(len(get_all_maintenanceTask()),2)
         self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").maintenance_tasks.get(TaskID = "maintenanceTask2").TaskID,"maintenanceTask2")
@@ -161,34 +161,34 @@ class DownlinkTaskControllerTest(TestCase):
     def test_add_one_downlinkTask_schedule_into_database(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
+        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
         self.assertEqual(get_downlinkTask_by_id("dTask1").TaskID,"dTask1")
         self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").downlink_tasks.get(TaskID = "dTask1").TaskID,"dTask1")
     
     def test_get_all_downlinkTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask2",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask3",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask4",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
+        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask2",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask3",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask4",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
         self.assertEqual(len(get_all_downlinkTask()),4)
 
     def test_delete_downlinkTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask2",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask3",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        add_downlinkTaskTask(TaskID="dTask4",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
+        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask2",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask3",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        add_downlinkTaskTask(TaskID="dTask4",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
         delete_downlinkTask_by_id("dTask4")
         self.assertEqual(len(get_all_downlinkTask()),3)
 
     def test_update_downlinkTask(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
-        update_downlinkTask_info(TaskID="dTask1",revisitFrequency=25,priority=1,imageId="image1",downlinkStartTime=timezone.now(),downlinkEndTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"))
+        add_downlinkTaskTask(TaskID="dTask1",revisitFrequency=24,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
+        update_downlinkTask_info(TaskID="dTask1",revisitFrequency=25,priority=1,imageId="image1",startTime=timezone.now(),endTime=timezone.now(),schedule = get_satelliteSchedule_by_id(scheduleId ="scheduleOne"),duration =timedelta(hours=1, minutes=15))
         self.assertEqual(get_downlinkTask_by_id("dTask1").revisitFrequency,25)
 
 class GroundStationControllerTests(TestCase):
@@ -496,7 +496,7 @@ class ImageControllerTest(TestCase):
         )
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now(),duration =timedelta(hours=1, minutes=15))
         add_image(
             imageId="image1",  
             imageSize=1024, 
@@ -525,8 +525,8 @@ class ImageControllerTest(TestCase):
         )
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         add_image(
             imageId="image1",  
             imageSize=1024, 
@@ -565,8 +565,8 @@ class ImageControllerTest(TestCase):
         )
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now(),duration =timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(),endTime=timezone.now(),duration =timedelta(hours=1, minutes=15))
         add_image(
             imageId="image1",  
             imageSize=1024, 
@@ -605,8 +605,8 @@ class ImageControllerTest(TestCase):
         )
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindow=timezone.now(),satellite=get_satellite_by_id("soso1"))
-        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
-        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        add_imagingTask(TaskID = "imageTask2",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         add_image(
             imageId="image1",  
             imageSize=1024, 
