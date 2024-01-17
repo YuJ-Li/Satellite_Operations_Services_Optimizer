@@ -95,12 +95,15 @@ def delete_satelliteSchedule_by_id(scheduleId):
 
 #imageTask controller--------------------
 def add_imagingTask(TaskID, revisitFrequency, priority,imagingRegionLatitude,
-                    imagingRegionLongitude,imagingTime,deliveryTime,schedule):
+                    imagingRegionLongitude,imagingTime,deliveryTime,schedule,startTime,endTime,duration):
     try:
         imagingTask = ImagingTask(
             TaskID = TaskID,
             revisitFrequency = revisitFrequency,
             priority = priority,
+            startTime = startTime,
+            endTime = endTime,
+            duration = duration,
             imagingRegionLatitude = imagingRegionLatitude,
             imagingRegionLongitude = imagingRegionLongitude,
             imagingTime = imagingTime,
@@ -125,11 +128,14 @@ def get_imagingTask_by_id(TaskID)->ImagingTask:
         return HttpResponseBadRequest('task not found.')
     
 def updata_imagingTask_info(TaskID, revisitFrequency, priority,imagingRegionLatitude,
-                    imagingRegionLongitude,imagingTime,deliveryTime,schedule):
+                    imagingRegionLongitude,imagingTime,deliveryTime,schedule,startTime,endTime,duration):
     try:
         it = ImagingTask.objects.get(TaskID = TaskID)
         it.revisitFrequency = revisitFrequency
         it.priority = priority
+        it.startTime = startTime
+        it.endTime = endTime
+        it.duration = duration
         it.imagingRegionLatitude = imagingRegionLatitude
         it.imagingRegionLongitude = imagingRegionLongitude
         it.imagingTime = imagingTime
@@ -150,12 +156,14 @@ def delete_imagingTask_by_id(TaskID):
     
 #MaintenanceTask controller--------------------
 def add_maintenanceTask(TaskID, revisitFrequency, priority,target,timeWindow,duration,
-                        payloadOperationAffected,schedule):
+                        payloadOperationAffected,schedule,startTime,endTime):
     try:
         maintenanceTask = MaintenanceTask(
             TaskID = TaskID,
             revisitFrequency = revisitFrequency,
             priority = priority,
+            startTime = startTime,
+            endTime = endTime,
             target = target,
             timeWindow = timeWindow,
             duration = duration,
@@ -180,7 +188,7 @@ def get_maintenanceTask_by_id(TaskID)->MaintenanceTask:
         return HttpResponseBadRequest('task not found.')
     
 def updata_maintenanceTask_info(TaskID, revisitFrequency, priority,target,timeWindow,duration,
-                        payloadOperationAffected,schedule):
+                        payloadOperationAffected,schedule,startTime, endTime):
     try:
         mt = MaintenanceTask.objects.get(TaskID = TaskID)
         mt.revisitFrequency = revisitFrequency
@@ -190,6 +198,8 @@ def updata_maintenanceTask_info(TaskID, revisitFrequency, priority,target,timeWi
         mt.payloadOperationAffected = payloadOperationAffected
         mt.duration = duration
         mt.schedule = schedule
+        mt.startTime = startTime
+        mt.endTime = endTime
         mt.save()
     except MaintenanceTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')    
@@ -204,15 +214,16 @@ def delete_maintenanceTask_by_id(TaskID):
         return HttpResponseBadRequest('task not found.')
     
 #DownlinkTask controller--------------------
-def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
+def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,startTime,endTime,duration,schedule):
     try:
         downlinkTask = DownlinkTask(
             TaskID = TaskID,
             revisitFrequency = revisitFrequency,
             priority = priority,
             imageId = imageId,
-            downlinkStartTime = downlinkStartTime,
-            downlinkEndTime = downlinkEndTime,
+            startTime = startTime,
+            endTime = endTime,
+            duration = duration,
             schedule = schedule
         )
         downlinkTask.save()
@@ -232,15 +243,16 @@ def get_downlinkTask_by_id(TaskID)->DownlinkTask:
     except DownlinkTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
     
-def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,downlinkStartTime,downlinkEndTime,schedule):
+def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,schedule,startTime,endTime,duration):
     try:
         dt = DownlinkTask.objects.get(TaskID = TaskID)
         dt.revisitFrequency = revisitFrequency
         dt.priority = priority
         dt.imageId=imageId
-        dt.downlinkStartTime = downlinkStartTime
-        dt.downlinkEndTime = downlinkEndTime
         dt.schedule = schedule
+        dt.startTime = startTime
+        dt.endTime = endTime
+        dt.duration
         dt.save()
     except DownlinkTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')    
@@ -443,3 +455,6 @@ def delete_outage_by_id(outageId):
         outage.delete()
     except Outage.DoesNotExist:
         return HttpResponseBadRequest('outage not found.')
+
+###############controller for satellite scheduling##########################
+

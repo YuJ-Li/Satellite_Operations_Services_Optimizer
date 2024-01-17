@@ -16,20 +16,22 @@ class SatelliteTask(models.Model):
     TaskID = models.CharField(max_length=50, unique=True)
     revisitFrequency = models.PositiveIntegerField()  # In some time unit (e.g., hours, days)
     priority = models.PositiveIntegerField()  # Assuming some integer representation
-
+    startTime = models.DateTimeField()
+    endTime = models.DateTimeField()
+    duration = models.DurationField()
     class Meta:
         abstract = True  # Indicates this model won't be used to create any database table.
 
 class DownlinkTask(SatelliteTask):
     imageId = models.CharField(max_length=50, unique=False)
-    downlinkStartTime = models.DateTimeField()
-    downlinkEndTime = models.DateTimeField()
+    #downlinkStartTime = models.DateTimeField()
+    #downlinkEndTime = models.DateTimeField()
     schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='downlink_tasks')
 
 class MaintenanceTask(SatelliteTask):
     target = models.CharField(max_length=255)
     timeWindow = models.DateTimeField()
-    duration = models.DurationField()  # Expects a datetime.timedelta instance
+    #duration = models.DurationField()  # Expects a datetime.timedelta instance
     payloadOperationAffected = models.BooleanField()
     schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='maintenance_tasks')
 

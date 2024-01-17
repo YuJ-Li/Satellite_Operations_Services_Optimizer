@@ -151,17 +151,17 @@ print(f'{total} imaging tasks got scheduled.')
 # print(f'{total} tasks got scheduled.')
  
 
-num_achievable_task = 0
-for it in imaging_tasks:
-    achievable = False
-    print("Task name: ", it.name)
-    for s in satellites:
-        common_achievabilities = find_satellite_achievabilities(s, it)
-        if len(common_achievabilities)!=0:
-            achievable = True
-            print(f"{s.name}: {(common_achievabilities)}")
-    if achievable: num_achievable_task+=1
-print(num_achievable_task)
+# num_achievable_task = 0
+# for it in imaging_tasks:
+#     achievable = False
+#     print("Task name: ", it.name)
+#     for s in satellites:
+#         common_achievabilities = find_satellite_achievabilities(s, it)
+#         if len(common_achievabilities)!=0:
+#             achievable = True
+#             print(f"{s.name}: {(common_achievabilities)}")
+#     if achievable: num_achievable_task+=1
+# print(num_achievable_task)
 
 # check satellite availibility (fov)
 # take care of revisit frequency sample 24
