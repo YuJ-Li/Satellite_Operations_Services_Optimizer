@@ -21,7 +21,7 @@ LOW_SIZE = 128
 LOW_DIMENSION = [40,20]
 ###################################### CLASSES ###########################################
 
-class Task:
+class TaskData:
     def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
         self.name = name
         self.start_time = start_time
@@ -30,7 +30,7 @@ class Task:
         self.priority = priority # imaging tasks: priority from 3 to 1 = from high to low; maintenance activity: priority = 4 (highest)
         self.satellite = satellite # to be determined by the scheduling algorithm
 
-class Satellite:
+class SatelliteData:
     def __init__(self, name, activity_window, tle):
         self.name = name
         self.activity_window = activity_window
@@ -38,14 +38,14 @@ class Satellite:
         self.tle = tle
 
 
-class ImageTask(Task):
+class ImageTaskData(TaskData):
     def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None, achievability = None):
         super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
         self.image_type = image_type
         self.latitude = latitude
         self.longitude = longitude
 
-class ImageType(Enum):
+class ImageTypeData(Enum):
     HIGH = {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
     MEDIUM = {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
     LOW = {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
@@ -68,11 +68,11 @@ def convert_str_to_datetime(datetime_str):
 def get_image_type(image_type):
     match image_type:
         case "Low":
-            return ImageType.LOW
+            return ImageTypeData.LOW
         case "Medium":
-            return ImageType.MEDIUM
+            return ImageTypeData.MEDIUM
         case "High":
-            return ImageType.HIGH
+            return ImageTypeData.HIGH
         
 def get_satellite_by_name(satellites, name):
     for satellite in satellites:
@@ -221,11 +221,11 @@ def initialize_satellites_tasks():
     time_window_start = datetime(2023, 10, 8, 00, 00, 00)
     time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
 
-    satellites1 = [Satellite('SOSO-1',(time_window_start,time_window_end), tle1),
-                Satellite('SOSO-2',(time_window_start,time_window_end), tle2),
-                Satellite('SOSO-3',(time_window_start,time_window_end), tle3),
-                Satellite('SOSO-4',(time_window_start,time_window_end), tle4),
-                Satellite('SOSO-5',(time_window_start,time_window_end), tle5)]
+    satellites1 = [SatelliteData('SOSO-1',(time_window_start,time_window_end), tle1),
+                SatelliteData('SOSO-2',(time_window_start,time_window_end), tle2),
+                SatelliteData('SOSO-3',(time_window_start,time_window_end), tle3),
+                SatelliteData('SOSO-4',(time_window_start,time_window_end), tle4),
+                SatelliteData('SOSO-5',(time_window_start,time_window_end), tle5)]
 
     ############################### process maintenance acticvities ############################### 
     maintenance_path = "/app/order_samples/group1" # group 1 is a set of maintenance activities
@@ -246,7 +246,7 @@ def initialize_satellites_tasks():
             duration = dt.timedelta(seconds=int(data["Duration"]))
             # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
             # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
+            maintenance_activities.append(TaskData(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
         index += 1
     print(f'There are {len(maintenance_activities)} maintenance activities.')
 
@@ -255,11 +255,11 @@ def initialize_satellites_tasks():
     time_window_start = datetime(2023, 11, 18, 00, 00, 00)
     time_window_end = datetime(2023, 11, 18, 23, 59, 59) 
 
-    satellites2 = [Satellite('SOSO-1',(time_window_start,time_window_end), tle1),
-                Satellite('SOSO-2',(time_window_start,time_window_end), tle2),
-                Satellite('SOSO-3',(time_window_start,time_window_end), tle3),
-                Satellite('SOSO-4',(time_window_start,time_window_end), tle4),
-                Satellite('SOSO-5',(time_window_start,time_window_end), tle5)]
+    satellites2 = [SatelliteData('SOSO-1',(time_window_start,time_window_end), tle1),
+                SatelliteData('SOSO-2',(time_window_start,time_window_end), tle2),
+                SatelliteData('SOSO-3',(time_window_start,time_window_end), tle3),
+                SatelliteData('SOSO-4',(time_window_start,time_window_end), tle4),
+                SatelliteData('SOSO-5',(time_window_start,time_window_end), tle5)]
 
     ############################### process imaging tasks ###############################
     imaging_path = "/app/order_samples/group2" # group 2 is a set of imaging tasks
@@ -284,7 +284,7 @@ def initialize_satellites_tasks():
             lon = data["Longitude"]
             # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
             # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            new_imaging_task = ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
+            new_imaging_task = ImageTaskData(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
             # find satellites find_satellite_achievabilities for this imaging task
             achievabilities = {}
             for s in satellites2:

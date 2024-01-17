@@ -6,6 +6,8 @@ from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, D
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
+from .scheduling_algorithm import *
+
 
 #satellite controller--------------------
 def add_satellite(satelliteId, TLE, storageCapacity, powerCapacity, fieldOfView):
@@ -457,4 +459,6 @@ def delete_outage_by_id(outageId):
         return HttpResponseBadRequest('outage not found.')
 
 ###############controller for satellite scheduling##########################
+def importTestCaseForScheduling():
+    satellites1, satellites2, maintenance_activities, imaging_tasks = initialize_satellites_tasks()
     
