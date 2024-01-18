@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
 from .scheduling_algorithm import *
+from .edf_priority import *
 
 
 #satellite controller--------------------
@@ -57,9 +58,9 @@ def delete_satellite_by_id(satellite_id):
         return HttpResponseBadRequest('Satellite not found.')
 
 #satelliteSchedule controller---------------
-def add_SatelliteSchedule(scheduleId, activityWindow, satellite):
+def add_SatelliteSchedule(scheduleId, activityWindowStart,activityWindowEnd, satellite):
     try:
-        satelliteSchedule = SatelliteSchedule(scheduleID = scheduleId, activityWindow = activityWindow, satellite = satellite)
+        satelliteSchedule = SatelliteSchedule(scheduleID = scheduleId, activityWindowStart = activityWindowStart,activityWindowEnd = activityWindowEnd, satellite = satellite)
         satelliteSchedule.save()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -76,12 +77,13 @@ def get_satelliteSchedule_by_id(scheduleId)->SatelliteSchedule:
     except SatelliteSchedule.DoesNotExist:
         return HttpResponseBadRequest('SatelliteSchedule not found.')
 
-def update_satelliteSchedule_info(scheduleId, activityWindow, satellite):
+def update_satelliteSchedule_info(scheduleId, activityWindowStart,activityWindowEnd, satellite):
     try:
         satelliteSchedule = SatelliteSchedule.objects.get(scheduleID=scheduleId)
         satelliteSchedule.scheduleID = satelliteSchedule.scheduleID
-        satelliteSchedule.activityWindow = activityWindow
+        satelliteSchedule.activityWindowStart = activityWindowStart
         satelliteSchedule.satellite = satellite
+        satelliteSchedule.activityWindowEnd = activityWindowEnd
         satelliteSchedule.save()
     except SatelliteSchedule.DoesNotExist:
         return HttpResponseBadRequest('SatelliteSchedule not found.')
@@ -459,6 +461,62 @@ def delete_outage_by_id(outageId):
         return HttpResponseBadRequest('outage not found.')
 
 ###############controller for satellite scheduling##########################
-def importTestCaseForScheduling():
-    satellites1, satellites2, maintenance_activities, imaging_tasks = initialize_satellites_tasks()
+def importTestCaseForSchedulingImagingTask():
+    #print("#####importing the test cse for scheduling#####")
+    _, satellites, _, imaging_tasks = initialize_satellites_tasks()
+    for satellite in satellites:
+        add_satellite(satelliteId=satellite.name,TLE=satellite.tle,storageCapacity=10,powerCapacity=10,fieldOfView=10)
+        add_SatelliteSchedule(scheduleId=(satellite.name+"schedule"),activityWindowStart=satellite.activity_window[0],activityWindowEnd=satellite.activity_window[1],satellite=get_satellite_by_id(satellite.name))
     
+    #default satellite to initially store tasks
+    add_satellite(satelliteId="admin123",TLE="admin123",storageCapacity=0,powerCapacity=0,fieldOfView=0)
+    add_SatelliteSchedule(scheduleId="admin123_schedule",activityWindowStart=datetime(2023, 1, 1, 00, 00, 00),activityWindowEnd=datetime(2023, 1, 1, 00, 00, 00),satellite=get_satellite_by_id("admin123"))
+    # print("satelliteSize: ")
+    # print(len(get_all_satellites()))
+
+    i=0
+    for imaging_task in imaging_tasks:
+        add_imagingTask(TaskID=imaging_task.name+str(i),revisitFrequency=1,priority=imaging_task.priority,imagingRegionLatitude=imaging_task.latitude,imagingRegionLongitude=imaging_task.longitude,imagingTime=imaging_task.start_time,deliveryTime=imaging_task.end_time,schedule=get_satelliteSchedule_by_id("admin123_schedule"),startTime=imaging_task.start_time,endTime=imaging_task.end_time, duration=imaging_task.duration)
+        i = i+1
+    # print("task size: ")
+    # print(len(get_all_imagingTask()))
+
+def performingAlgorithumImaginTask():
+    #transfer data from DB to algorithm data
+    satellites = get_all_satellites()
+    imaging_tasks = get_all_imagingTask()
+    satelliteDatas = []
+    for satellite in satellites:
+        activity_window = (satellite.satelliteSchedule.activityWindowStart,satellite.satelliteSchedule.activityWindowEnd)
+        satelliteDatas.append(SatelliteData(name=satellite.satelliteId,activity_window=activity_window,tle=satellite.TLE))
+    imaging_taskDatas = []
+    for imaging_task in imaging_tasks:
+        imaging_taskDatas.append(ImageTaskData(name=imaging_task.TaskID,start_time=imaging_task.startTime,end_time=imaging_task.endTime,duration=imaging_task.duration,priority=imaging_task.priority,image_type=ImageTypeData.MEDIUM,latitude=imaging_task.imagingRegionLatitude,longitude=imaging_task.imagingRegionLongitude))
+    # print("imaing tasks size: ")
+    # print(len(imaging_taskDatas))
+    #performing edf
+    print('-----------imaging tasks-------------')
+    priority_list = group_by_priority(imaging_taskDatas)
+
+    # print_priority_list(priority_list)
+
+    edf(priority_list, satelliteDatas)
+
+    print('------------------')
+    total=0
+    for satellite in satelliteDatas:
+        print(satellite.name, ':')
+        total += len(satellite.schedule)
+        for t in satellite.schedule:
+            print(t[0].name)
+    print(f'{total} imaging tasks got scheduled.')
+
+    #transfer data back to database
+    for satellite in satelliteDatas:
+        for t in satellite.schedule:
+            it = get_imagingTask_by_id(t[0].name)
+            satellite_schedule = get_satellite_by_id(satellite.name).satelliteSchedule
+            updata_imagingTask_info(TaskID=t[0].name,revisitFrequency=it.revisitFrequency,priority=it.priority,imagingRegionLatitude= it.imagingRegionLatitude,imagingRegionLongitude=it.imagingRegionLongitude,imagingTime=it.imagingTime,deliveryTime=it.deliveryTime,schedule=satellite_schedule,startTime=it.startTime,endTime=it.endTime,duration=it.duration)
+
+
+

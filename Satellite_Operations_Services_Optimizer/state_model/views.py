@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from .repositories import performingAlgorithumImaginTask
 
 #test restAPI-----------------------------------------
 @api_view(['GET'])
@@ -428,3 +429,7 @@ def outage_detail(request, outage_id):
 
     except Outage.DoesNotExist:
         raise Http404("outage not found")
+
+def perform_algorithm_view(request):
+    # Execute your function
+    performingAlgorithumImaginTask()

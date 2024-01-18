@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import perform_algorithm_view
 
 urlpatterns = [
     path('',views.getData),
@@ -21,4 +22,5 @@ urlpatterns = [
     path('images/<str:image_id>/', views.image_detail, name='image_detail'),
     path('outages/', views.outage_list),
     path('outages/<str:outage_id>/', views.outage_detail, name='outage_detail'),
+    path('scheduling/', perform_algorithm_view, name='perform-algorithm'),
 ]

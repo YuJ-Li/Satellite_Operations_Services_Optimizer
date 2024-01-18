@@ -10,7 +10,8 @@ class Satellite(models.Model):
 class SatelliteSchedule(models.Model):
     satellite = models.OneToOneField(Satellite, on_delete=models.CASCADE,related_name = "satelliteSchedule")
     scheduleID = models.CharField(max_length=50, unique=True)
-    activityWindow = models.DateTimeField()
+    activityWindowStart = models.DateTimeField()
+    activityWindowEnd = models.DateTimeField()
 
 class SatelliteTask(models.Model):
     TaskID = models.CharField(max_length=50, unique=True)

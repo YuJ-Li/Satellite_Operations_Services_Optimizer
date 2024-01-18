@@ -1,9 +1,8 @@
 # from .repositories import *
 import json
 import os
-from datetime import datetime, timezone
 import datetime as dt
-from scheduling_algorithm import *
+from .scheduling_algorithm import *
 
 
 
@@ -97,42 +96,42 @@ def sort_satellites_by_number_of_tasks(satellites):
     return sorted_satellites
 
 
-satellites1, satellites2, maintenance_activities, imaging_tasks = initialize_satellites_tasks()
-print('----------------- SCHEDULING START -----------------')
+# satellites1, satellites2, maintenance_activities, imaging_tasks = initialize_satellites_tasks()
+# print('----------------- SCHEDULING START -----------------')
 
-# TODO 1: use your scheduling algorithm to schedule tasks in `maintenance_activities` on the five satellites
-print('---------maintenance activities----------')
-priority_list1 = group_by_priority(maintenance_activities)
+# # TODO 1: use your scheduling algorithm to schedule tasks in `maintenance_activities` on the five satellites
+# print('---------maintenance activities----------')
+# priority_list1 = group_by_priority(maintenance_activities)
 
-# print_priority_list(priority_list)
+# # print_priority_list(priority_list)
 
-edf(priority_list1, satellites1)
+# edf(priority_list1, satellites1)
 
-print('------------------')
-total=0
-for satellite in satellites1:
-    print(satellite.name, ':')
-    total += len(satellite.schedule)
-    for t in satellite.schedule:
-        print(t[0].name)
-print(f'{total} maintenance tasks got scheduled.')
+# print('------------------')
+# total=0
+# for satellite in satellites1:
+#     print(satellite.name, ':')
+#     total += len(satellite.schedule)
+#     for t in satellite.schedule:
+#         print(t[0].name)
+# print(f'{total} maintenance tasks got scheduled.')
 
-# TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
-print('-----------imaging tasks-------------')
-priority_list2 = group_by_priority(imaging_tasks)
+# # TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
+# print('-----------imaging tasks-------------')
+# priority_list2 = group_by_priority(imaging_tasks)
 
-# print_priority_list(priority_list)
+# # print_priority_list(priority_list)
 
-edf(priority_list2, satellites2)
+# edf(priority_list2, satellites2)
 
-print('------------------')
-total=0
-for satellite in satellites2:
-    print(satellite.name, ':')
-    total += len(satellite.schedule)
-    for t in satellite.schedule:
-        print(t[0].name)
-print(f'{total} imaging tasks got scheduled.')
+# print('------------------')
+# total=0
+# for satellite in satellites2:
+#     print(satellite.name, ':')
+#     total += len(satellite.schedule)
+#     for t in satellite.schedule:
+#         print(t[0].name)
+# print(f'{total} imaging tasks got scheduled.')
 
 # TODO 3: use your scheduling algorithm to schedule tasks in BOTH lists on the five satellites
 # all_tasks = imaging_tasks
