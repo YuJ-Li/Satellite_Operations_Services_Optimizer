@@ -172,22 +172,22 @@ for satellite in satellites1:
         print(t[0].name, t[1], t[2])
 print(f'{total} maintenance tasks got scheduled.')
 
-# # TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
-# print('-----------imaging tasks-------------')
-# priority_list2 = group_by_priority(imaging_tasks)
+# TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
+print('-----------imaging tasks-------------')
+priority_list2 = group_by_priority(imaging_tasks)
 
-# # print_priority_list(priority_list)
+# print_priority_list(priority_list)
 
-# edf_imaging(priority_list2, satellites2)
+edf_imaging(priority_list2, satellites2)
 
-# total=0
-# for satellite in satellites2:
-#     print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
-#     total += len(satellite.schedule)
-#     for t in satellite.schedule:
-#         print(t[0].name)
-#         # print(t[0].name, t[1], t[2])
-# print(f'{total} imaging tasks got scheduled.')
+total=0
+for satellite in satellites2:
+    print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+    total += len(satellite.schedule)
+    for t in satellite.schedule:
+        print(t[0].name)
+        # print(t[0].name, t[1], t[2])
+print(f'{total} imaging tasks got scheduled.')
 
 
 
