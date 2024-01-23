@@ -38,6 +38,7 @@ def edf_imaging(priority_list, satellites):
             
             for satellite in valid_keys:
                 if task.satellite is not None and task.satellite != satellite: continue
+                if satellite.capacity_used + task.image_type.value['size'] > satellite.capacity: continue
                 schedule_ptr = -1
                 while not scheduled and schedule_ptr<len(satellite.schedule):
                     empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
@@ -47,6 +48,7 @@ def edf_imaging(priority_list, satellites):
                         scheduled_start = imaging_taking_time
                         scheduled_end = scheduled_start + task.duration
                         satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                        satellite.capacity_used += task.image_type.value['size']
                         scheduled = True
                         # print(f'{task.name} is scheduled on {satellite.name}.')
                         break
@@ -170,21 +172,22 @@ for satellite in satellites1:
         print(t[0].name, t[1], t[2])
 print(f'{total} maintenance tasks got scheduled.')
 
-# TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
-print('-----------imaging tasks-------------')
-priority_list2 = group_by_priority(imaging_tasks)
+# # TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
+# print('-----------imaging tasks-------------')
+# priority_list2 = group_by_priority(imaging_tasks)
 
-# print_priority_list(priority_list)
+# # print_priority_list(priority_list)
 
-edf_imaging(priority_list2, satellites2)
+# edf_imaging(priority_list2, satellites2)
 
-total=0
-for satellite in satellites2:
-    print(f"------{satellite.name}------")
-    total += len(satellite.schedule)
-    for t in satellite.schedule:
-        print(t[0].name, t[1], t[2])
-print(f'{total} imaging tasks got scheduled.')
+# total=0
+# for satellite in satellites2:
+#     print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+#     total += len(satellite.schedule)
+#     for t in satellite.schedule:
+#         print(t[0].name)
+#         # print(t[0].name, t[1], t[2])
+# print(f'{total} imaging tasks got scheduled.')
 
 
 

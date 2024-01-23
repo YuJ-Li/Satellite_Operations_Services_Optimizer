@@ -9,15 +9,16 @@ from geopy.distance import geodesic
 
 # satellite constants
 SATELLITE_FULL_VIEW_ANGLE = 60
+STORAGE_CAPACITY = 32 * 1024 # GB
 # Image types constants
 HIGH_WRITING_TIME = 120
-HIGH_SIZE = 512
+HIGH_SIZE = 512 # MB
 HIGH_DIMENSION = [10,10]
 MEDIUM_WRITING_TIME = 45
-MEDIUM_SIZE = 256
+MEDIUM_SIZE = 256 # MB
 MEDIUM_DIMENSION = [40,20]
 LOW_WRITING_TIME = 20
-LOW_SIZE = 128
+LOW_SIZE = 128 # MB
 LOW_DIMENSION = [40,20]
 ###################################### CLASSES ###########################################
 
@@ -36,7 +37,8 @@ class Satellite:
         self.activity_window = activity_window
         self.schedule = [] # list of ((task_object, actual_start_time, real_end_time))
         self.tle = tle
-
+        self.capacity = STORAGE_CAPACITY
+        self.capacity_used = 0 
 
 class ImageTask(Task):
     def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None, achievability = None):
@@ -261,11 +263,19 @@ def initialize_satellites_tasks():
             start_time = convert_str_to_datetime(data["Window"]["Start"])
             end_time = convert_str_to_datetime(data["Window"]["End"])
             duration = dt.timedelta(seconds=int(data["Duration"]))
-            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}')
-            # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            maintenance_activities.append(Task(name,start_time=start_time, end_time=end_time, duration=duration, priority=4, satellite=target))
+            # revisit frequency
+            num_repetition = data["RepeatCycle"]["Repetition"] 
+            if num_repetition == "Null":
+                maintenance_activities.append(Task(name, start_time, end_time, duration, 4, target))
+            else:
+                min_gap = data["RepeatCycle"]["Frequency"]["MinimumGap"]
+                max_gap = data["RepeatCycle"]["Frequency"]["MaximumGap"]
+                maintenance_activities.append(Task(name, start_time, end_time, duration, 4, target))
+                construct_and_add_revisit_maintenance_tasks(maintenance_activities, num_repetition, min_gap, max_gap, name, end_time, duration, target)
         index += 1
     print(f'There are {len(maintenance_activities)} maintenance activities.')
+
+
 
 
     ############################### Initialize satellites group 2 ################################
@@ -308,28 +318,56 @@ def initialize_satellites_tasks():
             duration = dt.timedelta(seconds=int(image_type.value['time_for_writing']))
             lat = data["Latitude"]
             lon = data["Longitude"]
-            # print(f'activity name: {name}, start time: {start_time}, end time: {end_time}, duration: {duration}, priority: {priority}')
-            # create a task object, with priority of 4, assuming that maintenance activities have the highest priority (higher than any imaging task)
-            new_imaging_task = ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
-            # find satellites find_satellite_achievabilities for this imaging task
-            achievabilities = {}
-            for s in satellites2:
-                achievabilities[s] = find_satellite_achievabilities(s,new_imaging_task)
-            new_imaging_task.achievability = achievabilities
-            imaging_tasks.append(new_imaging_task)
+            # revisit frequency
+            recurrence = data["Recurrence"]["Revisit"] 
+            if recurrence == "False":
+                define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority)
+            elif recurrence == "True":
+                num_revisit = data["Recurrence"]["NumberOfRevisits"]
+                revisit_frequency = data["Recurrence"]["RevisitFrequency"]
+                frequency_unit = data["Recurrence"]["RevisitFrequencyUnits"]
+                define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority)
+                construct_and_add_revisit_imaging_tasks(num_revisit, revisit_frequency, frequency_unit, imaging_tasks, satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority)
         index += 1
     print(f'There are {len(imaging_tasks)} Imaging tasks.')
 
     return satellites1, satellites2, maintenance_activities, imaging_tasks
 
+def construct_and_add_revisit_imaging_tasks(num_revisit, revisit_frequency, frequency_unit, imaging_tasks, satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority):
+    for r in range(num_revisit):
+        next_name = name + "Revisit" + str(r+1)
+        if frequency_unit == "Hours":
+            next_start_time = start_time + dt.timedelta(hours=int(r*revisit_frequency))
+            next_end_time = end_time + dt.timedelta(hours=int(r*revisit_frequency))
+            define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lon, next_name, next_start_time, next_end_time, duration, priority)
+        elif frequency_unit == "Days":
+            next_start_time = start_time + dt.timedelta(days=int(r*revisit_frequency))
+            next_end_time = end_time + dt.timedelta(days=int(r*revisit_frequency))
+            define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lon, next_name, next_start_time, next_end_time, duration, priority)
 
-# _,_,_,imaging_tasks = initialize_satellites_tasks()
-# can = 0
-# for task in imaging_tasks:
-#     valid_keys = [key for key, value in task.achievability.items() if value != []]
-#     if valid_keys: can+=1
-#     print(valid_keys)
-# print(can)
+
+def define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority):
+    new_imaging_task = ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
+    # find satellites find_satellite_achievabilities for this imaging task
+    achievabilities = {}
+    for s in satellites2:
+        achievabilities[s] = find_satellite_achievabilities(s,new_imaging_task)
+    new_imaging_task.achievability = achievabilities
+    imaging_tasks.append(new_imaging_task)
+
+def construct_and_add_revisit_maintenance_tasks(maintenance_activities, num_repetition, min_gap, max_gap, name, end_time, duration, target):
+    next_end_time = end_time
+    for r in range(int(num_repetition)):
+        next_name = name + "Revisit" + str(r+1)
+        next_start_time = next_end_time + dt.timedelta(seconds=int(min_gap))
+        next_end_time = next_end_time + dt.timedelta(seconds=int(max_gap))
+        maintenance_activities.append(Task(next_name, next_start_time, next_end_time, duration, 4, target))
+
+print("PRINT TASKS: ")
+_,_,maintenances,_ = initialize_satellites_tasks()
+for task in maintenances:
+    print(task.name, task.start_time, task.end_time)
+print('---------------------------------------------')
 
 # print(type(imaging_tasks[2].achievability['SOSO-1'][0][0]))
 # print(imaging_tasks[2].achievability['SOSO-1'][0][0])
