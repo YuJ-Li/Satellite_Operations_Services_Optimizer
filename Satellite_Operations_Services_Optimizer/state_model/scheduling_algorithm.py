@@ -41,11 +41,12 @@ class Satellite:
         self.capacity_used = 0 
 
 class MaintenanceTask(Task):
-    def __init__(self, name, start_time, end_time, duration, priority, satellite, min_gap = None, max_gap = None):
+    def __init__(self, name, start_time, end_time, duration, priority, satellite, payload_outage, min_gap = None, max_gap = None):
         super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
         self.next_maintenance = None
         self.min_gap = min_gap
         self.max_gap = max_gap
+        self.payload_outage = payload_outage
 
 class ImageTask(Task):
     def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None):
@@ -270,14 +271,15 @@ def initialize_satellites_tasks():
             start_time = convert_str_to_datetime(data["Window"]["Start"])
             end_time = convert_str_to_datetime(data["Window"]["End"])
             duration = dt.timedelta(seconds=int(data["Duration"]))
+            payload_outage = False if data["PayloadOutage"]=="FALSE" else True
             # revisit frequency
             num_repetition = data["RepeatCycle"]["Repetition"] 
             if num_repetition == "Null":
-                maintenance_activities.append(MaintenanceTask(name, start_time, end_time, duration, 4, target))
+                maintenance_activities.append(MaintenanceTask(name, start_time, end_time, duration, 4, target, payload_outage))
             else:
                 min_gap = data["RepeatCycle"]["Frequency"]["MinimumGap"]
                 max_gap = data["RepeatCycle"]["Frequency"]["MaximumGap"]
-                construct_and_add_revisit_maintenance_tasks(maintenance_activities, int(num_repetition), min_gap, max_gap, name, start_time, end_time, duration, target)
+                construct_and_add_revisit_maintenance_tasks(maintenance_activities, int(num_repetition), payload_outage, min_gap, max_gap, name, start_time, end_time, duration, target)
         index += 1
     print(f'There are {len(maintenance_activities)} maintenance activities.')
 
@@ -361,12 +363,12 @@ def define_and_add_imagaing_task(imaging_tasks, satellites2, image_type, lat, lo
     new_imaging_task.achievability = achievabilities
     imaging_tasks.append(new_imaging_task)
 
-def construct_and_add_revisit_maintenance_tasks(maintenance_activities, num_repetition, min_gap, max_gap, name, start_time, end_time, duration, target):
-    previous_task = MaintenanceTask(name, start_time, end_time, duration, 4, target, min_gap, max_gap)
+def construct_and_add_revisit_maintenance_tasks(maintenance_activities, num_repetition, payload_outage, min_gap, max_gap, name, start_time, end_time, duration, target):
+    previous_task = MaintenanceTask(name, start_time, end_time, duration, 4, target, payload_outage, min_gap, max_gap)
     maintenance_activities.append(previous_task)
     for r in range(int(num_repetition)-1):
         next_name = name + "Revisit" + str(r+1)
-        next_task = MaintenanceTask(next_name, None, None, duration, 4, target, min_gap, max_gap) # not able to decide the activity window until the the first time has been scheduled
+        next_task = MaintenanceTask(next_name, None, None, duration, 4, target, payload_outage, min_gap, max_gap) # not able to decide the activity window until the the first time has been scheduled
         previous_task.next_maintenance = next_task
         previous_task = next_task
 
