@@ -8,8 +8,8 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
 from .scheduling_algorithm import *
 from .edf_priority import *
-
-
+from .satellite_service import *
+from datetime import timedelta
 #satellite controller--------------------
 def add_satellite(satelliteId, TLE, storageCapacity, powerCapacity, fieldOfView):
     try:
@@ -517,6 +517,119 @@ def performingAlgorithumImaginTask():
             it = get_imagingTask_by_id(t[0].name)
             satellite_schedule = get_satellite_by_id(satellite.name).satelliteSchedule
             updata_imagingTask_info(TaskID=t[0].name,revisitFrequency=it.revisitFrequency,priority=it.priority,imagingRegionLatitude= it.imagingRegionLatitude,imagingRegionLongitude=it.imagingRegionLongitude,imagingTime=it.imagingTime,deliveryTime=it.deliveryTime,schedule=satellite_schedule,startTime=it.startTime,endTime=it.endTime,duration=it.duration)
+
+####################ground station scheduling########################
+def sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks():
+    #find the minimum and maxinum value of number of tasks and sum of priority
+    #weight of priority is 10%, wight of number of tasks is 30%, shortest deadline 60%
+    satellites = get_all_satellites()
+    minPriority = float('inf')
+    minNumberTasks = float('inf')
+    minTimeTillNow = float('inf')
+    maxPriority = 0
+    maxNumberTasks = 0
+    maxTimeTillNow = 0
+    now = timezone.now()
+    for satellite in satellites:
+        priority = 0
+        numberTasks = len(satellite.satelliteSchedule.downlink_tasks) + len(satellite.satelliteSchedule.maintenance_tasks)+len(satellite.satelliteSchedule.imaging_tasks)
+        timeTillNow = 0
+        for task in satellite.satelliteSchedule.downlink_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        for task in satellite.satelliteSchedule.maintenance_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        for task in satellite.satelliteSchedule.imaging_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        #find the min and max values
+        if(priority <= minPriority):
+            minPriority = priority
+        if(priority >= maxPriority):
+            maxPriority = priority
+
+        if(numberTasks <= minNumberTasks):
+            minNumberTasks = numberTasks
+        if(numberTasks >= maxNumberTasks):
+            maxNumberTasks = numberTasks
+        
+        if(timeTillNow <= minTimeTillNow):
+            minTimeTillNow = timeTillNow
+        if(timeTillNow >= minTimeTillNow):
+            maxTimeTillNow = timeTillNow
+    #normalize each variables and weight them with ratio
+    satelliteDic = {}
+    for satellite in satellites:
+        priority = 0
+        numberTasks = len(satellite.satelliteSchedule.downlink_tasks) + len(satellite.satelliteSchedule.maintenance_tasks)+len(satellite.satelliteSchedule.imaging_tasks)
+        timeTillNow = 0
+        for task in satellite.satelliteSchedule.downlink_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        for task in satellite.satelliteSchedule.maintenance_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        for task in satellite.satelliteSchedule.imaging_tasks:
+            priority = priority + task.priority
+            if(task.startTime > now):
+                delta = task.startTime - now
+                seconds = delta.total_seconds()
+                timeTillNow =timeTillNow + seconds
+        satelliteDic[satellite] = (0.1*(priority - minPriority)/(maxPriority - minPriority)) + (0.3 * ((numberTasks - minNumberTasks)/(maxNumberTasks - minNumberTasks))) + (-0.6* ((timeTillNow - minTimeTillNow)/(maxTimeTillNow - minTimeTillNow)))
+    #sort satellite by the values
+    sorted_satellites = sorted(satelliteDic.items(), key=lambda item: item[1], reverse=True)
+    #return the sorted satellite
+    return sorted_satellites.keys()
+
+def performGroundStationScheduling():
+    groundStations = get_all_groundStations()
+    satellites = sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks()
+    now = timezone.now()
+    #for each satellites. find the takes place first
+    satellitesDic = {}
+    for satellite in satellites:
+        firstDeadline = timedelta(days=730)
+        for task in satellite.satelliteSchedule.downlink_tasks:
+            if (task.startTime < firstDeadline):
+                firstDeadline = task.startTime
+        for task in satellite.satelliteSchedule.maintenance_tasks:
+            if (task.startTime < firstDeadline):
+                firstDeadline = task.startTime
+        for task in satellite.satelliteSchedule.imaging_tasks:
+            if (task.startTime < firstDeadline):
+                firstDeadline = task.startTime
+        satellitesDic[satellite] = firstDeadline
+
+    #put satellite to each ground station    
+    timescale = load.timescale()
+    for satellite, dl in satellitesDic:
+        for groundStation in groundStations:
+            s = define_satellite(satellite.TLE)
+            g = define_groundstation(groundStation.latitude,groundStation.longitude,groundStation.height)
+            startTime = timescale.utc(now.year, now.month, now.day, now.hour, now.minute, now.second)
+            endTime = timescale.utc(dl.year, dl.month, dl.day, dl.hour, dl.minute, dl.second)
+            timeWindows = get_time_window(s,g,startTime,endTime,satellite.fieldOfView)
+            if(len(timeWindows)>0):
+                add_groundStationRequest(requestId=(groundStation.groundStationId + "request"),acquisitionOfSignal=timeWindows[0][0],lossOfSignal=timeWindows[0][1],satelliteId = satellite.satelliteId,groundStation=groundStation)
+                break
+
+    #sort satellites by task priority
 
 
 

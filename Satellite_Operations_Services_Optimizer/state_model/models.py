@@ -59,7 +59,7 @@ class GroundStationRequest(models.Model):
     lossOfSignal = models.DateTimeField()
     satelliteId = models.CharField(max_length=50)
     groundStation= models.ForeignKey(GroundStation, on_delete=models.CASCADE, related_name='ground_station_requests',default=None)
-
+    
 class Image(models.Model):
     IMAGE_TYPE_CHOICES = [
         ('SL', 'Spotlight'),

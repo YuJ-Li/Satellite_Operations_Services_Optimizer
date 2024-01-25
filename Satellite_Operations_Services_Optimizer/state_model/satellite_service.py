@@ -1,5 +1,26 @@
 from skyfield.api import EarthSatellite, load, wgs84, Topos
+from datetime import datetime
+from django.utils import timezone
 
+def convert_to_datetime_field(time_windows):
+    """
+    Converts a list of time windows with string datetime to Django DateTimeField-compatible objects.
+    """
+    converted_time_windows = []
+    for window in time_windows:
+        start_str, end_str = window  # Extract start and end time strings
+
+        # Convert string to datetime object
+        start_datetime = datetime.strptime(start_str, '%Y %b %d %H:%M:%S')
+        end_datetime = datetime.strptime(end_str, '%Y %b %d %H:%M:%S')
+
+        # Make datetime timezone-aware (assuming UTC)
+        start_datetime_aware = timezone.make_aware(start_datetime, timezone.utc)
+        end_datetime_aware = timezone.make_aware(end_datetime, timezone.utc)
+
+        converted_time_windows.append([start_datetime_aware, end_datetime_aware])
+
+    return converted_time_windows
 
 def define_groundstation(latitude_degree, longitude_degree, elevation):
     """
@@ -60,4 +81,4 @@ def get_time_window(satellite, groundstation, start_time, end_time, altitude_deg
                 window[1] = t.utc_strftime('%Y %b %d %H:%M:%S')
                 time_windows.append(list(window))
         index += 1
-    return time_windows
+    return convert_to_datetime_field(time_windows)
