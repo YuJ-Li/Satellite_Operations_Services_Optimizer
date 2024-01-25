@@ -90,37 +90,22 @@ def edf_maintenance(priority_list, satellites):
     for p_group in priority_list.items(): 
         tasks = p_group[1]
         tasks.sort(key=lambda x: (x.end_time,x.start_time)) # for each priority group, sort tasks by end time then by start time
-        s = str(p_group[0]) + ": "
-        for t in tasks:
-            s = s + t.name + ", "
         for task in tasks:
-            scheduled = False
-            for satellite in satellites:
-                # TODO: check if the task is achievable on this satellite
-                if task.satellite is not None and task.satellite != satellite: continue
-                schedule_ptr = -1
-                while not scheduled and schedule_ptr<len(satellite.schedule):
-                    empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
-                    if empty_slot_start is not None and empty_slot_end is not None:
-                        if task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
-                            scheduled_start = empty_slot_start
-                            scheduled_end = scheduled_start + task.duration
-                            satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
-                            scheduled = True
-                            # print(f'{task.name} is scheduled on {satellite.name}.')
-                            break
-                        elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
-                            scheduled_start = task.start_time
-                            scheduled_end = scheduled_start + task.duration
-                            satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
-                            scheduled = True
-                            # print(f'{task.name} is scheduled on {satellite.name}.')
-                            break
-                if scheduled: break
+            satellite = task.satellite
+            scheduled, scheduled_start = schedule_maintenance_task(task, satellite)
             if not scheduled:
                 unscheduled_tasks.append(task)
                 # print(f'Failed to schedule {task.name}.')
             else:
+                # schedule the next revisit activity
+                while scheduled and task.next_maintenance:
+                    next_task = task.next_maintenance
+                    next_task.start_time = scheduled_start + dt.timedelta(seconds=int(task.min_gap))
+                    next_task.end_time = scheduled_start + dt.timedelta(seconds=int(task.max_gap)) + next_task.duration
+                    scheduled, scheduled_start = schedule_maintenance_task(next_task, satellite)
+                    task = next_task
+                if not scheduled:
+                    unscheduled_tasks.append(next_task) # if a revisit activity failed to be scheduled, add it to the pool of unscheduled for future consideration
                 # if a task got scheduled, re-sort the satellites by increasing number of tasks scheduled on them
                 # to ensure satellite
                 satellites = sort_satellites_by_number_of_tasks(satellites)
@@ -128,6 +113,30 @@ def edf_maintenance(priority_list, satellites):
     print(f'{len(unscheduled_tasks)} tasks failed to be scheduled: ')
     for t in unscheduled_tasks:
         print(t.name)
+    return unscheduled_tasks
+
+def schedule_maintenance_task(task, satellite):
+    scheduled = False
+    scheduled_start = None
+    schedule_ptr = -1
+    while not scheduled and schedule_ptr<len(satellite.schedule):
+        empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
+        if empty_slot_start is not None and empty_slot_end is not None:
+            if task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
+                scheduled_start = empty_slot_start
+                scheduled_end = scheduled_start + task.duration
+                satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                scheduled = True
+                # print(f'{task.name} is scheduled on {satellite.name}.')
+                break
+            elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
+                scheduled_start = task.start_time
+                scheduled_end = scheduled_start + task.duration
+                satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                scheduled = True
+                # print(f'{task.name} is scheduled on {satellite.name}.')
+                break 
+    return scheduled,scheduled_start
 
 def find_next_slot(satellite, ptr):
     '''ptr is the index of task scheduled on this satellite from which we start to find empty slot'''
