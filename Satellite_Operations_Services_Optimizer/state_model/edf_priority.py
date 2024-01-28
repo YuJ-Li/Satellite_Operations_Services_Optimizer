@@ -177,15 +177,29 @@ priority_list1 = group_by_priority(maintenance_activities)
 
 edf_maintenance(priority_list1, satellites1)
 
-total=0
+# Isolate maintenance activities that do not affect payload outage
+for satellite in satellites1:
+    for t in satellite.schedule:
+        if not t[0].payload_outage:
+            satellite.maintenance_without_outage.append(t)
+            satellite.schedule.remove(t)
+
+total_m=0
 for satellite in satellites1:
     print(f"------{satellite.name}------")
-    total += len(satellite.schedule)
+    total_m += len(satellite.schedule)
+    print("--> Payload outage: ")
     for t in satellite.schedule:
         print(t[0].name, t[1], t[2])
-print(f'{total} maintenance tasks got scheduled.')
+    print("--> No payload outage: ")
+    for t in satellite.maintenance_without_outage:
+        print(t[0].name, t[1], t[2])
+print(f'{total_m} maintenance tasks got scheduled.')
+
+
 
 # TODO 2: use your scheduling algorithm to schedule tasks in `imaging_tasks` on the five satellites
+
 print('-----------imaging tasks-------------')
 priority_list2 = group_by_priority(imaging_tasks)
 
@@ -198,7 +212,7 @@ for satellite in satellites2:
     print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
     total += len(satellite.schedule)
     for t in satellite.schedule:
-        print(t[0].name)
+        print(t[0].name, t[1], t[2])
         # print(t[0].name, t[1], t[2])
 print(f'{total} imaging tasks got scheduled.')
 

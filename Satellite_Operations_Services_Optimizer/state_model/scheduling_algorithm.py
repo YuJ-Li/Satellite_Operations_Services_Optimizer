@@ -36,6 +36,7 @@ class Satellite:
         self.name = name
         self.activity_window = activity_window
         self.schedule = [] # list of ((task_object, actual_start_time, real_end_time))
+        self.maintenance_without_outage = [] # list of maintenance tasks that do not affect payload
         self.tle = tle
         self.capacity = STORAGE_CAPACITY
         self.capacity_used = 0 
