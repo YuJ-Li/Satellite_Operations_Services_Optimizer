@@ -6,9 +6,8 @@
    "ImageStartTime": "2023-11-18T04:59:30",
    "ImageEndTime": "2023-11-18T22:23:10",
    "DeliveryTime": "2023-11-19T03:23:10",
-   "Recurrence": [
+   "Recurrence":  
       {
-         "Revist": "False"
-      }
-   ]
+         "Revisit": "False"
+      } 
 }
