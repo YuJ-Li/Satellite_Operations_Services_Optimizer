@@ -490,11 +490,12 @@ def update_imaging_pool():
     global SATELLITES
     global GLOBAL_TIME
     for s in SATELLITES:
+        tasks_to_remove = []
         for t in s.schedule:
-            if isinstance(t[0], ImageTask) and t[0].start_time > GLOBAL_TIME: # if the imaging task has not been executed (hasn's started) yet
-                add_task_to_priority_list(ACCUMULATED_IMAGING_TASKS,t[0])
-                s.schedule.remove(t)
-                t[0].satellite = None
+            if isinstance(t[0], ImageTask): # if the imaging task has not been executed (hasn's started) yet
+                process_image_task(tasks_to_remove, t)
+        for task in tasks_to_remove:
+            s.schedule.remove(task) 
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
 '''
@@ -507,58 +508,63 @@ def update_maintenenace_and_imaging_pool():
     global IMAGING_TASK_HISTORY
     global SATELLITES
     global GLOBAL_TIME
+
     for s in SATELLITES:
         tasks_to_remove = []
         for t in s.schedule:
             if isinstance(t[0], ImageTask):
-                if t[1] > GLOBAL_TIME: # if the imaging task has not been executed (hasn's started) yet
-                    add_task_to_priority_list(ACCUMULATED_IMAGING_TASKS,t[0])
-                    tasks_to_remove.append(t)
-                    t[0].satellite = None
-                elif t[2] < GLOBAL_TIME:
-                    tasks_to_remove.append(t)
-                    IMAGING_TASK_HISTORY.append(t)
+                process_image_task(tasks_to_remove, t)
             elif isinstance(t[0], MaintenanceTask): # if the maintenance task has not been executed (hasn's started) yet
-                # if t[0].is_head:
-                #     if t[1] > GLOBAL_TIME: # if the head task has not been executed yet
-                #         add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0]) # add it to the reschedule list
-                #         tasks_to_remove.append(t)
-                #     else: # if this head task has started
-                #         t[0].is_head = False
-                #         t[0].next_maintenance.is_head = True # assign its next occurence to be the head
-                #         if t[2] < GLOBAL_TIME:
-                #             tasks_to_remove.append(t)
-                #             MAINTENANCE_TASK_HISTORY.append(t) # append it to the history
-                # elif t[1] > GLOBAL_TIME:
-                #     tasks_to_remove.append(t)
-                # elif t[2] < GLOBAL_TIME:
-                #     tasks_to_remove.append(t)
-                #     MAINTENANCE_TASK_HISTORY.append(t)
-
-                if t[1] > GLOBAL_TIME: # if the task has not been executed yet
-                    tasks_to_remove.append(t)
-                    if t[0].is_head:
-                        add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0]) # add it to the reschedule list
-                elif t[1] <= GLOBAL_TIME and t[2] > GLOBAL_TIME: # if the task is being executed
-                    if t[0].is_head:
-                        t[0].is_head = False
-                        t[0].next_maintenance.is_head = True # assign its next occurence to be the head
-                elif t[2] <= GLOBAL_TIME: # if the task is completed
-                    tasks_to_remove.append(t)
-                    MAINTENANCE_TASK_HISTORY.append(t)
-                    if t[0].is_head:
-                        t[0].is_head = False
-                        t[0].next_maintenance.is_head = True # assign its next occurence to be the head
-
+                process_maintenance_task(tasks_to_remove, t)
 
         for task in tasks_to_remove:
             s.schedule.remove(task)
+
+        tasks_to_remove = []
         for t in s.maintenance_without_outage:
-            add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0])
-            s.maintenance_without_outage.remove(t)
+            process_maintenance_task(tasks_to_remove, t)
+        for task in tasks_to_remove:
+            s.maintenance_without_outage.remove(task)
+
     # sort task list by priority
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
     ACCUMULATED_MAINTENANCE_TASKS = dict(sorted(ACCUMULATED_MAINTENANCE_TASKS.items(), key=lambda item: item[0], reverse=True))
+
+def process_image_task(tasks_to_remove, t):
+    global ACCUMULATED_IMAGING_TASKS
+    global IMAGING_TASK_HISTORY
+    global GLOBAL_TIME
+
+    if t[1] > GLOBAL_TIME: # if the imaging task has not been executed (hasn's started) yet
+        add_task_to_priority_list(ACCUMULATED_IMAGING_TASKS,t[0])
+        tasks_to_remove.append(t)
+        t[0].satellite = None
+    elif t[2] < GLOBAL_TIME:
+        tasks_to_remove.append(t)
+        IMAGING_TASK_HISTORY.append(t)
+
+
+def process_maintenance_task(tasks_to_remove, t):
+    global GLOBAL_TIME
+    global ACCUMULATED_MAINTENANCE_TASKS
+    global MAINTENANCE_TASK_HISTORY
+
+    if t[1] > GLOBAL_TIME: # if the task has not been executed yet
+        tasks_to_remove.append(t)
+        if t[0].is_head:
+            add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0]) # add it to the reschedule list
+    elif t[1] <= GLOBAL_TIME and t[2] > GLOBAL_TIME: # if the task is being executed
+        if t[0].is_head:
+            t[0].is_head = False
+            t[0].next_maintenance.is_head = True # assign its next occurence to be the head
+    elif t[2] <= GLOBAL_TIME: # if the task is completed
+        tasks_to_remove.append(t)
+        MAINTENANCE_TASK_HISTORY.append(t)
+        if t[0].is_head:
+            t[0].is_head = False
+            t[0].next_maintenance.is_head = True # assign its next occurence to be the head
+
+
 
 def clear_expired_tasks(task_list):
     global GLOBAL_TIME
@@ -731,50 +737,50 @@ satellites2 = [Satellite('SOSO-1',tle1),
             Satellite('SOSO-4',tle4),
             Satellite('SOSO-5',tle5)]
     
-SATELLITES = satellites1
-set_global_time("2023-11-18 00:00:00")
+SATELLITES = satellites2
+set_global_time("2023-10-02 00:00:00")
 
 ############################## process maintenance acticvities ############################### 
-maintenance_path = "/app/order_samples/m_group2" # group 1 is a set of maintenance activities
-maintenance_json_files = read_directory(maintenance_path)
-print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
-
-POINT = 0
-for json_file in maintenance_json_files[:17]:
-    POINT += 1
-    if POINT == 15: set_global_time("2023-11-18 00:10:00")
-    file_path = os.path.join(maintenance_path, json_file)
-    with open(file_path, 'r') as file:
-        task_name = json_file.split('/')[-1].split('.')[0]
-        print(f"\nscheduling task {task_name}...")
-        add_new_maintenance_task(file, task_name)
-
-        for satellite in SATELLITES:
-            print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
-            for t in satellite.schedule:
-                print(f"{t[0].name}         {t[1]} --> {t[2]}")
-        
-
-############################### process imaging tasks ###############################
-# imaging_path = "/app/order_samples/group4_newest" # group 2 is a set of imaging tasks
-# imaging_json_files = read_directory(imaging_path)
-# print(f'{imaging_path} contains {len(imaging_json_files)} files.')
+# maintenance_path = "/app/order_samples/m_group2" # group 1 is a set of maintenance activities
+# maintenance_json_files = read_directory(maintenance_path)
+# print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
 
 # POINT = 0
-# for json_file in imaging_json_files:
+# for json_file in maintenance_json_files[:17]:
 #     POINT += 1
-#     # if POINT == 3: set_global_time("2023-10-02 18:00:00")
-#     file_path = os.path.join(imaging_path, json_file)
-#     # print(json_file.split('/')[-1].split('.')[0])
+#     if POINT == 15: set_global_time("2023-11-18 00:10:00")
+#     file_path = os.path.join(maintenance_path, json_file)
 #     with open(file_path, 'r') as file:
 #         task_name = json_file.split('/')[-1].split('.')[0]
 #         print(f"\nscheduling task {task_name}...")
-#         add_new_imaging_task(file, name = task_name)
+#         add_new_maintenance_task(file, task_name)
 
 #         for satellite in SATELLITES:
 #             print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
 #             for t in satellite.schedule:
 #                 print(f"{t[0].name}         {t[1]} --> {t[2]}")
+        
+
+############################### process imaging tasks ###############################
+imaging_path = "/app/order_samples/group4_newest" # group 2 is a set of imaging tasks
+imaging_json_files = read_directory(imaging_path)
+print(f'{imaging_path} contains {len(imaging_json_files)} files.')
+
+POINT = 0
+for json_file in imaging_json_files[:50]:
+    POINT += 1
+    if POINT == 20: set_global_time("2023-10-02 10:00:00")
+    file_path = os.path.join(imaging_path, json_file)
+    # print(json_file.split('/')[-1].split('.')[0])
+    with open(file_path, 'r') as file:
+        task_name = json_file.split('/')[-1].split('.')[0]
+        print(f"\nscheduling task {task_name}...")
+        add_new_imaging_task(file, name = task_name)
+
+        for satellite in SATELLITES:
+            print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+            for t in satellite.schedule:
+                print(f"{t[0].name}         {t[1]} --> {t[2]}")
 
 
 
