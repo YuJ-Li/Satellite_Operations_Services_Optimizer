@@ -210,7 +210,7 @@ def find_satellite_achievabilities(satellite, imaging_task):
     return common_achievabilities
 
 
-def initialize_satellites_tasks():
+def initialize_satellites_tasks(imaging_path_input):
     ############################### Initialize satellites group 1 ################################
     with open('/app/TLE/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
     with open('/app/TLE/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
@@ -262,7 +262,7 @@ def initialize_satellites_tasks():
                 SatelliteData('SOSO-5',(time_window_start,time_window_end), tle5)]
 
     ############################### process imaging tasks ###############################
-    imaging_path = "/app/order_samples/group2" # group 2 is a set of imaging tasks
+    imaging_path = imaging_path_input # group 2/3 is a set of imaging tasks
     imaging_json_files = read_directory(imaging_path)
     print(f'{imaging_path} contains {len(imaging_json_files)} files.')
 
@@ -297,5 +297,5 @@ def initialize_satellites_tasks():
     return satellites1, satellites2, maintenance_activities, imaging_tasks
 
 
-_,_,_, imaging_tasks = initialize_satellites_tasks()
-print(imaging_tasks[2].achievability)
+# _,_,_, imaging_tasks = initialize_satellites_tasks()
+# print(imaging_tasks[2].achievability)

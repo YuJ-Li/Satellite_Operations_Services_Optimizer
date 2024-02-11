@@ -120,12 +120,21 @@ class ImageTaskControllerTest(TestCase):
         add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         updata_imagingTask_info(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 12,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         self.assertEqual(get_imagingTask_by_id("imageTask1").imagingRegionLongitude,12)
-    def test__imageTask_SatelliteSchedule_relationship(self):
+    def test_imageTask_SatelliteSchedule_relationship(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
         add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindowStart=timezone.now(),activityWindowEnd=timezone.now(),satellite=get_satellite_by_id("soso1"))
         add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
         self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").imaging_tasks.get(TaskID = "imageTask1").TaskID,"imageTask1")
-    
+    def test_imageTask_SatelliteSchedule_relationship_after_update_schedule(self):
+        add_satellite("soso1","this is a TLE.",10,10,10)
+        add_satellite("soso2","this is a TLE.",10,10,10)
+        add_SatelliteSchedule(scheduleId ="scheduleOne",activityWindowStart=timezone.now(),activityWindowEnd=timezone.now(),satellite=get_satellite_by_id("soso1"))
+        add_imagingTask(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 10,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleOne"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").imaging_tasks.get(TaskID = "imageTask1").TaskID,"imageTask1")
+        add_SatelliteSchedule(scheduleId ="scheduleTwo",activityWindowStart=timezone.now(),activityWindowEnd=timezone.now(),satellite=get_satellite_by_id("soso2"))
+        updata_imagingTask_info(TaskID = "imageTask1",revisitFrequency = 2,priority=10,imagingRegionLatitude = 10,imagingRegionLongitude = 12,imagingTime=timezone.now(),deliveryTime = timezone.now(),schedule = get_satelliteSchedule_by_id("scheduleTwo"),startTime=timezone.now(), endTime=timezone.now(),duration = timedelta(hours=1, minutes=15))
+        self.assertEqual(get_satelliteSchedule_by_id("scheduleTwo").imaging_tasks.get(TaskID = "imageTask1").TaskID,"imageTask1")
+        #self.assertEqual(get_satelliteSchedule_by_id("scheduleOne").imaging_tasks.get(TaskID = "imageTask1").TaskID,"imageTask1")
 class MaintenanceTaskControllerTest(TestCase):
     def test_add_one_maintenanceTask_schedule_into_database(self):
         add_satellite("soso1","this is a TLE.",10,10,10)
@@ -623,12 +632,69 @@ class ImageControllerTest(TestCase):
         )
         self.assertEqual(get_image_by_id("image1").imageSize,2048)
 
-class TestSchedulingAlgorithum(TestCase):
+class TestSatelliteSchedulingAlgorithum(TestCase):
     def test_import_test_cases(self):
-        importTestCaseForSchedulingImagingTask()
+        importTestCaseForSchedulingImagingTask("/app/order_samples/group2")
         self.assertEqual(len(get_all_satellites()),6)
         self.assertEqual(len(get_all_imagingTask()),50)
     def test_transferDataToAlgorithum(self):
-        importTestCaseForSchedulingImagingTask()
+        importTestCaseForSchedulingImagingTask("/app/order_samples/group2")
         performingAlgorithumImaginTask()
-        self.assertEqual(1,1)
+        # print("all satellites: #############")
+        # print(get_all_imagingTask()[0].TaskID)
+        # print(get_all_imagingTask()[0].schedule.satellite.satelliteId)
+        # print(get_all_imagingTask()[1].TaskID)
+        # print(get_all_imagingTask()[1].schedule.satellite.satelliteId)
+        # print(get_all_imagingTask()[2].TaskID)
+        # print(get_all_imagingTask()[2].schedule.satellite.satelliteId)
+        #print(get_all_satellites()[0].satelliteSchedule.imaging_tasks.get(TaskID = "ImagingTask10").TaskID)
+        self.assertEqual(len(get_all_satellites()[0].satelliteSchedule.imaging_tasks.all()),10)
+        self.assertEqual(len(get_all_satellites()[1].satelliteSchedule.imaging_tasks.all()),10)
+        self.assertEqual(len(get_all_satellites()[2].satelliteSchedule.imaging_tasks.all()),10)
+
+class TestGroundStationSchedulingAlgorithum(TestCase):
+    def test_import_test_cases(self):
+        importTestCaseForSchedulingImagingTask("/app/order_samples/group3")
+        self.assertEqual(len(get_all_satellites()),6)
+        self.assertEqual(len(get_all_imagingTask()),30)
+    def test_sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks(self):
+        importTestCaseForSchedulingImagingTask("/app/order_samples/group3")
+        performingAlgorithumImaginTask()
+        print(sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks())
+        self.assertEqual(len(sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks()),6)
+    def test_performGroundStationScheduling(self):
+        print("#######ground sataion scheduling##################")
+        importTestCaseForSchedulingImagingTask("/app/order_samples/group3")
+        add_groundStation(
+            groundStationId="groundStation1",
+            stationName="Sample Ground Station1",
+            latitude=-79.92044865279952, #
+            longitude=-27.567082165241743,
+            height=500, 
+            stationMask="255.255.255.0", 
+            uplinkRate=100, 
+            downlinkRate=200, 
+        )
+        add_groundStation(
+            groundStationId="groundStation2",
+            stationName="Sample Ground Station2",
+            latitude=-85.6439118846981,
+            longitude=-52.678023392885535,
+            height=300, 
+            stationMask="255.255.255.0", 
+            uplinkRate=100, 
+            downlinkRate=200, 
+        )
+        add_groundStation(
+            groundStationId="groundStation3",
+            stationName="Sample Ground Station3",
+            latitude=-3.0093935327252694,
+            longitude=-43.491089830886835,
+            height=100, 
+            stationMask="255.255.255.0", 
+            uplinkRate=100, 
+            downlinkRate=200, 
+        )
+        performingAlgorithumImaginTask()
+        performGroundStationScheduling()
+

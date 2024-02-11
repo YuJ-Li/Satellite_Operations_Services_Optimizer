@@ -461,9 +461,9 @@ def delete_outage_by_id(outageId):
         return HttpResponseBadRequest('outage not found.')
 
 ###############controller for satellite scheduling##########################
-def importTestCaseForSchedulingImagingTask():
+def importTestCaseForSchedulingImagingTask(image_tasks_group):
     #print("#####importing the test cse for scheduling#####")
-    _, satellites, _, imaging_tasks = initialize_satellites_tasks()
+    _, satellites, _, imaging_tasks = initialize_satellites_tasks(image_tasks_group)
     for satellite in satellites:
         add_satellite(satelliteId=satellite.name,TLE=satellite.tle,storageCapacity=10,powerCapacity=10,fieldOfView=10)
         add_SatelliteSchedule(scheduleId=(satellite.name+"schedule"),activityWindowStart=satellite.activity_window[0],activityWindowEnd=satellite.activity_window[1],satellite=get_satellite_by_id(satellite.name))
@@ -522,6 +522,7 @@ def performingAlgorithumImaginTask():
 def sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks():
     #find the minimum and maxinum value of number of tasks and sum of priority
     #weight of priority is 10%, wight of number of tasks is 30%, shortest deadline 60%
+    defaultDif = 0.05
     satellites = get_all_satellites()
     minPriority = float('inf')
     minNumberTasks = float('inf')
@@ -532,21 +533,21 @@ def sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks():
     now = timezone.now()
     for satellite in satellites:
         priority = 0
-        numberTasks = len(satellite.satelliteSchedule.downlink_tasks) + len(satellite.satelliteSchedule.maintenance_tasks)+len(satellite.satelliteSchedule.imaging_tasks)
+        numberTasks = len(satellite.satelliteSchedule.downlink_tasks.all()) + len(satellite.satelliteSchedule.maintenance_tasks.all())+len(satellite.satelliteSchedule.imaging_tasks.all())
         timeTillNow = 0
-        for task in satellite.satelliteSchedule.downlink_tasks:
+        for task in satellite.satelliteSchedule.downlink_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
                 seconds = delta.total_seconds()
                 timeTillNow =timeTillNow + seconds
-        for task in satellite.satelliteSchedule.maintenance_tasks:
+        for task in satellite.satelliteSchedule.maintenance_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
                 seconds = delta.total_seconds()
                 timeTillNow =timeTillNow + seconds
-        for task in satellite.satelliteSchedule.imaging_tasks:
+        for task in satellite.satelliteSchedule.imaging_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
@@ -567,35 +568,49 @@ def sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks():
             minTimeTillNow = timeTillNow
         if(timeTillNow >= minTimeTillNow):
             maxTimeTillNow = timeTillNow
+    # print("minPriority: "+str(minPriority))
+    # print("maxPriority: "+str(maxPriority))
+    # print("minNumberTasks: "+str(minNumberTasks))
+    # print("minNumberTasks: "+str(maxNumberTasks))
+    # print("minTimeTillNow: "+str(minTimeTillNow))
+    # print("maxTimeTillNow: "+str(maxTimeTillNow))
     #normalize each variables and weight them with ratio
     satelliteDic = {}
     for satellite in satellites:
         priority = 0
-        numberTasks = len(satellite.satelliteSchedule.downlink_tasks) + len(satellite.satelliteSchedule.maintenance_tasks)+len(satellite.satelliteSchedule.imaging_tasks)
+        numberTasks = len(satellite.satelliteSchedule.downlink_tasks.all()) + len(satellite.satelliteSchedule.maintenance_tasks.all())+len(satellite.satelliteSchedule.imaging_tasks.all())
         timeTillNow = 0
-        for task in satellite.satelliteSchedule.downlink_tasks:
+        for task in satellite.satelliteSchedule.downlink_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
                 seconds = delta.total_seconds()
                 timeTillNow =timeTillNow + seconds
-        for task in satellite.satelliteSchedule.maintenance_tasks:
+        for task in satellite.satelliteSchedule.maintenance_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
                 seconds = delta.total_seconds()
                 timeTillNow =timeTillNow + seconds
-        for task in satellite.satelliteSchedule.imaging_tasks:
+        for task in satellite.satelliteSchedule.imaging_tasks.all():
             priority = priority + task.priority
             if(task.startTime > now):
                 delta = task.startTime - now
                 seconds = delta.total_seconds()
                 timeTillNow =timeTillNow + seconds
-        satelliteDic[satellite] = (0.1*(priority - minPriority)/(maxPriority - minPriority)) + (0.3 * ((numberTasks - minNumberTasks)/(maxNumberTasks - minNumberTasks))) + (-0.6* ((timeTillNow - minTimeTillNow)/(maxTimeTillNow - minTimeTillNow)))
+        # print("Priority: "+str(priority))
+        # print("NumberTasks: "+str(numberTasks))
+        # print("TimeTillNow: "+str(timeTillNow))
+        satelliteDic[satellite] = (0.1*(priority - minPriority)/(maxPriority - minPriority+defaultDif)) + (0.3 * ((numberTasks - minNumberTasks)/(maxNumberTasks - minNumberTasks+defaultDif))) + (-0.6* ((timeTillNow - minTimeTillNow)/(maxTimeTillNow - minTimeTillNow+defaultDif)))
     #sort satellite by the values
+    # print("before sort")
+    # print(satelliteDic)
+    #print dic for debugging
     sorted_satellites = sorted(satelliteDic.items(), key=lambda item: item[1], reverse=True)
     #return the sorted satellite
-    return sorted_satellites.keys()
+    print("after sort")
+    print(sorted_satellites)
+    return [satellite_tuple[0] for satellite_tuple in sorted_satellites]
 
 def performGroundStationScheduling():
     groundStations = get_all_groundStations()
@@ -604,32 +619,41 @@ def performGroundStationScheduling():
     #for each satellites. find the takes place first
     satellitesDic = {}
     for satellite in satellites:
-        firstDeadline = timedelta(days=730)
-        for task in satellite.satelliteSchedule.downlink_tasks:
-            if (task.startTime < firstDeadline):
+        firstDeadline = now + timedelta(days=1024)
+        for task in satellite.satelliteSchedule.downlink_tasks.all():
+            if (task.startTime < firstDeadline and task.startTime > now):
                 firstDeadline = task.startTime
-        for task in satellite.satelliteSchedule.maintenance_tasks:
-            if (task.startTime < firstDeadline):
+        for task in satellite.satelliteSchedule.maintenance_tasks.all():
+            if (task.startTime < firstDeadline and task.startTime > now):
                 firstDeadline = task.startTime
-        for task in satellite.satelliteSchedule.imaging_tasks:
-            if (task.startTime < firstDeadline):
+        for task in satellite.satelliteSchedule.imaging_tasks.all():
+            if (task.startTime < firstDeadline and task.startTime > now):
                 firstDeadline = task.startTime
         satellitesDic[satellite] = firstDeadline
 
     #put satellite to each ground station    
     timescale = load.timescale()
-    for satellite, dl in satellitesDic:
+    for satellite, dl in satellitesDic.items():
         for groundStation in groundStations:
             s = define_satellite(satellite.TLE)
             g = define_groundstation(groundStation.latitude,groundStation.longitude,groundStation.height)
             startTime = timescale.utc(now.year, now.month, now.day, now.hour, now.minute, now.second)
             endTime = timescale.utc(dl.year, dl.month, dl.day, dl.hour, dl.minute, dl.second)
             timeWindows = get_time_window(s,g,startTime,endTime,satellite.fieldOfView)
+            print(timeWindows)
             if(len(timeWindows)>0):
                 add_groundStationRequest(requestId=(groundStation.groundStationId + "request"),acquisitionOfSignal=timeWindows[0][0],lossOfSignal=timeWindows[0][1],satelliteId = satellite.satelliteId,groundStation=groundStation)
                 break
-
     #sort satellites by task priority
+    #log the result of the scheduling
+    print("###ground satation result####")
+    groundStations = get_all_groundStations()
+    for gs in groundStations:
+        print(gs.groundStationId+" :")
+        for request in gs.ground_station_requests.all():
+            print(request.satellite_id)
+
+        
 
 
 

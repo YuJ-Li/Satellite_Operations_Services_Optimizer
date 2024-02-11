@@ -60,7 +60,7 @@ def get_time_window(satellite, groundstation, start_time, end_time, altitude_deg
     @return: a list of time windows(list)
     """
     time_windows = []
-    time, events = satellite.find_events(groundstation, start_time, end_time, altitude_degrees=altitude_degree)
+    time, events = satellite.find_events(groundstation, start_time, end_time, altitude_degrees=altitude_degree)#try 5 as input
     index = 0
     window = [None] * 2
     for t, e in zip(time, events):
