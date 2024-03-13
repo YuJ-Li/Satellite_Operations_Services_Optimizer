@@ -2,25 +2,31 @@ from django.shortcuts import render
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from .models import Satellite, SatelliteSchedule, ImagingTask,MaintenanceTask, DownlinkTask,GroundStation, GroundStationRequest, Image, Outage, SatelliteTask
+from .models import Satellite, ImageTask, MaintenanceTask, GroundStation, GroundStationRequest, Outage, SatelliteTask
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
 from .scheduling_algorithm import *
-from .edf_priority import *
+# from .edf_priority import *
 from .satellite_service import *
 from datetime import timedelta
+from django.db import transaction
+import json
+
 #satellite controller--------------------
-def add_satellite(satelliteId, TLE, storageCapacity, powerCapacity, fieldOfView):
+def add_satellite(satelliteId, tle, storage_capacity):
     try:
-        new_satellite = Satellite(satelliteId=satelliteId,
-                                TLE=TLE,
-                                storageCapacity=storageCapacity,
-                                powerCapacity=powerCapacity,
-                                fieldOfView=fieldOfView)
+        new_satellite = Satellite(name=satelliteId, 
+                                  schedule=json.dumps([]), 
+                                  maintenance_without_outage=json.dumps([]),
+                                  tle=tle,
+                                  storage_capacity=storage_capacity,
+                                  capacity_used = 0.0
+                                  )
         new_satellite.save()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 def get_all_satellites():
     try:
@@ -57,84 +63,100 @@ def delete_satellite_by_id(satellite_id):
     except Satellite.DoesNotExist:
         return HttpResponseBadRequest('Satellite not found.')
 
-#satelliteSchedule controller---------------
-def add_SatelliteSchedule(scheduleId, activityWindowStart,activityWindowEnd, satellite):
-    try:
-        satelliteSchedule = SatelliteSchedule(scheduleID = scheduleId, activityWindowStart = activityWindowStart,activityWindowEnd = activityWindowEnd, satellite = satellite)
-        satelliteSchedule.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# #satelliteSchedule controller---------------
+# def add_SatelliteSchedule(scheduleId, activityWindowStart,activityWindowEnd, satellite):
+#     try:
+#         satelliteSchedule = SatelliteSchedule(scheduleID = scheduleId, activityWindowStart = activityWindowStart,activityWindowEnd = activityWindowEnd, satellite = satellite)
+#         satelliteSchedule.save()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
  
-def get_all_satelliteSchedules():
-    try:
-        return SatelliteSchedule.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def get_all_satelliteSchedules():
+#     try:
+#         return SatelliteSchedule.objects.all()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def get_satelliteSchedule_by_id(scheduleId)->SatelliteSchedule:
-    try:
-        return SatelliteSchedule.objects.get(scheduleID  = scheduleId)
-    except SatelliteSchedule.DoesNotExist:
-        return HttpResponseBadRequest('SatelliteSchedule not found.')
+# def get_satelliteSchedule_by_id(scheduleId)->SatelliteSchedule:
+#     try:
+#         return SatelliteSchedule.objects.get(scheduleID  = scheduleId)
+#     except SatelliteSchedule.DoesNotExist:
+#         return HttpResponseBadRequest('SatelliteSchedule not found.')
 
-def update_satelliteSchedule_info(scheduleId, activityWindowStart,activityWindowEnd, satellite):
-    try:
-        satelliteSchedule = SatelliteSchedule.objects.get(scheduleID=scheduleId)
-        satelliteSchedule.scheduleID = satelliteSchedule.scheduleID
-        satelliteSchedule.activityWindowStart = activityWindowStart
-        satelliteSchedule.satellite = satellite
-        satelliteSchedule.activityWindowEnd = activityWindowEnd
-        satelliteSchedule.save()
-    except SatelliteSchedule.DoesNotExist:
-        return HttpResponseBadRequest('SatelliteSchedule not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def update_satelliteSchedule_info(scheduleId, activityWindowStart,activityWindowEnd, satellite):
+#     try:
+#         satelliteSchedule = SatelliteSchedule.objects.get(scheduleID=scheduleId)
+#         satelliteSchedule.scheduleID = satelliteSchedule.scheduleID
+#         satelliteSchedule.activityWindowStart = activityWindowStart
+#         satelliteSchedule.satellite = satellite
+#         satelliteSchedule.activityWindowEnd = activityWindowEnd
+#         satelliteSchedule.save()
+#     except SatelliteSchedule.DoesNotExist:
+#         return HttpResponseBadRequest('SatelliteSchedule not found.')
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def delete_satelliteSchedule_by_id(scheduleId):
-    try:
-        satelliteSchedule = SatelliteSchedule.objects.get(scheduleID = scheduleId)
-        satelliteSchedule.delete()
-    except satelliteSchedule.DoesNotExist:
-        pass
+# def delete_satelliteSchedule_by_id(scheduleId):
+#     try:
+#         satelliteSchedule = SatelliteSchedule.objects.get(scheduleID = scheduleId)
+#         satelliteSchedule.delete()
+#     except satelliteSchedule.DoesNotExist:
+#         pass
 
 #imageTask controller--------------------
-def add_imagingTask(TaskID, revisitFrequency, priority,imagingRegionLatitude,
-                    imagingRegionLongitude,imagingTime,deliveryTime,schedule,startTime,endTime,duration):
+# def add_imageTask(name, start_time, end_time, priority, duration, image_type, imagingRegionLatitude, imagingRegionLongitude):
+#     try:
+#         imagingTask = ImageTask(
+#             name = name, 
+#             start_time = start_time,
+#             end_time = end_time, 
+#             priority = priority,
+#             duration = duration,
+#             # image_type = image_type,
+#             imagingRegionLatitude = imagingRegionLatitude,
+#             imagingRegionLongitude = imagingRegionLongitude,
+#             # satellite = satellite
+#         )
+#         imagingTask.save()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+    
+def add_imageTask(name, priority, start_time, end_time, duration, image_type, imagingRegionLatitude, imagingRegionLongitude, achievability):
     try:
-        imagingTask = ImagingTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
+        imagingTask = ImageTask(
+            name = name, 
+            start_time = start_time,
+            end_time = end_time, 
             priority = priority,
-            startTime = startTime,
-            endTime = endTime,
             duration = duration,
+            image_type = image_type,
             imagingRegionLatitude = imagingRegionLatitude,
             imagingRegionLongitude = imagingRegionLongitude,
-            imagingTime = imagingTime,
-            deliveryTime = deliveryTime,
-            schedule = schedule
+            achievability = achievability,
+            # satellite = satellite
         )
         imagingTask.save()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
 
-def get_all_imagingTask():
+def get_all_imageTask():
     try:
-        return ImagingTask.objects.all()
+        return ImageTask.objects.all()
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
-def get_imagingTask_by_id(TaskID)->ImagingTask:
+def get_imageTask_by_id(TaskID)->ImageTask:
     try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
+        it = ImageTask.objects.get(TaskID = TaskID)
         return it
-    except ImagingTask.DoesNotExist:
+    except ImageTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
     
-def updata_imagingTask_info(TaskID, revisitFrequency, priority,imagingRegionLatitude,
+def updata_imageTask_info(TaskID, revisitFrequency, priority,imagingRegionLatitude,
                     imagingRegionLongitude,imagingTime,deliveryTime,schedule,startTime,endTime,duration):
     try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
+        it = ImageTask.objects.get(TaskID = TaskID)
         it.revisitFrequency = revisitFrequency
         it.priority = priority
         it.startTime = startTime
@@ -146,16 +168,16 @@ def updata_imagingTask_info(TaskID, revisitFrequency, priority,imagingRegionLati
         it.deliveryTime = deliveryTime
         it.schedule = schedule
         it.save()
-    except ImagingTask.DoesNotExist:
+    except ImageTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')    
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
-def delete_imagingTask_by_id(TaskID):
+def delete_imageTask_by_id(TaskID):
     try:
-        it = ImagingTask.objects.get(TaskID = TaskID)
+        it = ImageTask.objects.get(TaskID = TaskID)
         it.delete()
-    except ImagingTask.DoesNotExist:
+    except ImageTask.DoesNotExist:
         return HttpResponseBadRequest('task not found.')
     
 #MaintenanceTask controller--------------------
@@ -218,57 +240,57 @@ def delete_maintenanceTask_by_id(TaskID):
         return HttpResponseBadRequest('task not found.')
     
 #DownlinkTask controller--------------------
-def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,startTime,endTime,duration,schedule):
-    try:
-        downlinkTask = DownlinkTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
-            priority = priority,
-            imageId = imageId,
-            startTime = startTime,
-            endTime = endTime,
-            duration = duration,
-            schedule = schedule
-        )
-        downlinkTask.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def add_downlinkTaskTask(TaskID, revisitFrequency, priority,imageId,startTime,endTime,duration,schedule):
+#     try:
+#         downlinkTask = DownlinkTask(
+#             TaskID = TaskID,
+#             revisitFrequency = revisitFrequency,
+#             priority = priority,
+#             imageId = imageId,
+#             startTime = startTime,
+#             endTime = endTime,
+#             duration = duration,
+#             schedule = schedule
+#         )
+#         downlinkTask.save()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def get_all_downlinkTask():
-    try:
-        return DownlinkTask.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def get_all_downlinkTask():
+#     try:
+#         return DownlinkTask.objects.all()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
     
-def get_downlinkTask_by_id(TaskID)->DownlinkTask:
-    try:
-        it = DownlinkTask.objects.get(TaskID = TaskID)
-        return it
-    except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
+# def get_downlinkTask_by_id(TaskID)->DownlinkTask:
+#     try:
+#         it = DownlinkTask.objects.get(TaskID = TaskID)
+#         return it
+#     except DownlinkTask.DoesNotExist:
+#         return HttpResponseBadRequest('task not found.')
     
-def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,schedule,startTime,endTime,duration):
-    try:
-        dt = DownlinkTask.objects.get(TaskID = TaskID)
-        dt.revisitFrequency = revisitFrequency
-        dt.priority = priority
-        dt.imageId=imageId
-        dt.schedule = schedule
-        dt.startTime = startTime
-        dt.endTime = endTime
-        dt.duration
-        dt.save()
-    except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def update_downlinkTask_info(TaskID, revisitFrequency, priority,imageId,schedule,startTime,endTime,duration):
+#     try:
+#         dt = DownlinkTask.objects.get(TaskID = TaskID)
+#         dt.revisitFrequency = revisitFrequency
+#         dt.priority = priority
+#         dt.imageId=imageId
+#         dt.schedule = schedule
+#         dt.startTime = startTime
+#         dt.endTime = endTime
+#         dt.duration
+#         dt.save()
+#     except DownlinkTask.DoesNotExist:
+#         return HttpResponseBadRequest('task not found.')    
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
     
-def delete_downlinkTask_by_id(TaskID):
-    try:
-        it = DownlinkTask.objects.get(TaskID = TaskID)
-        it.delete()
-    except DownlinkTask.DoesNotExist:
-        return HttpResponseBadRequest('task not found.')
+# def delete_downlinkTask_by_id(TaskID):
+#     try:
+#         it = DownlinkTask.objects.get(TaskID = TaskID)
+#         it.delete()
+#     except DownlinkTask.DoesNotExist:
+#         return HttpResponseBadRequest('task not found.')
 
 
 #groundStation controller--------------------
@@ -371,49 +393,49 @@ def delete_groundStationRequest_by_id(requestId):
         return HttpResponseBadRequest('groundStationRequest not found.')
 
 #image controller--------------------
-def add_image(imageId,imageSize,imageType,groundStationRequest,imagingTask):
-    try:
-        image = Image(imageId= imageId,
-                      imageSize = imageSize,
-                      imageType = imageType,
-                      groundStationRequest = groundStationRequest,
-                      imagingTask = imagingTask)
-        image.save()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def add_image(imageId,imageSize,imageType,groundStationRequest,imagingTask):
+#     try:
+#         image = Image(imageId= imageId,
+#                       imageSize = imageSize,
+#                       imageType = imageType,
+#                       groundStationRequest = groundStationRequest,
+#                       imagingTask = imagingTask)
+#         image.save()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def get_all_images():
-    try:
-        return Image.objects.all()
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def get_all_images():
+#     try:
+#         return Image.objects.all()
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def get_image_by_id(imageId) -> Image:
-    try:
-        image = Image.objects.get(imageId=imageId)
-        return image
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('image not found.')
+# def get_image_by_id(imageId) -> Image:
+#     try:
+#         image = Image.objects.get(imageId=imageId)
+#         return image
+#     except ObjectDoesNotExist:
+#         return HttpResponseBadRequest('image not found.')
 
-def update_image_info(imageId,imageSize,imageType,groundStationRequest,imagingTask):
-    try:
-        image = Image.objects.get(imageId=imageId)
-        image.imageSize = imageSize
-        image.imageType = imageType
-        image.groundStationRequest = groundStationRequest
-        image.imagingTask = imagingTask
-        image.save()
-    except ObjectDoesNotExist:
-        return HttpResponseBadRequest('image not found.')
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+# def update_image_info(imageId,imageSize,imageType,groundStationRequest,imagingTask):
+#     try:
+#         image = Image.objects.get(imageId=imageId)
+#         image.imageSize = imageSize
+#         image.imageType = imageType
+#         image.groundStationRequest = groundStationRequest
+#         image.imagingTask = imagingTask
+#         image.save()
+#     except ObjectDoesNotExist:
+#         return HttpResponseBadRequest('image not found.')
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
-def delete_image_by_id(imageId):
-    try:
-        image = Image.objects.get(imageId=imageId)
-        image.delete()
-    except Image.DoesNotExist:
-        return HttpResponseBadRequest('image not found.')
+# def delete_image_by_id(imageId):
+#     try:
+#         image = Image.objects.get(imageId=imageId)
+#         image.delete()
+#     except Image.DoesNotExist:
+#         return HttpResponseBadRequest('image not found.')
     
 #Outage controller-------------------
 def add_outage(outageId,startTime,endTime,groundStation,satellite):
@@ -461,62 +483,69 @@ def delete_outage_by_id(outageId):
         return HttpResponseBadRequest('outage not found.')
 
 ###############controller for satellite scheduling##########################
-def importTestCaseForSchedulingImagingTask(image_tasks_group):
-    #print("#####importing the test cse for scheduling#####")
-    _, satellites, _, imaging_tasks = initialize_satellites_tasks(image_tasks_group)
-    for satellite in satellites:
-        add_satellite(satelliteId=satellite.name,TLE=satellite.tle,storageCapacity=10,powerCapacity=10,fieldOfView=10)
-        add_SatelliteSchedule(scheduleId=(satellite.name+"schedule"),activityWindowStart=satellite.activity_window[0],activityWindowEnd=satellite.activity_window[1],satellite=get_satellite_by_id(satellite.name))
-    
-    #default satellite to initially store tasks
-    add_satellite(satelliteId="admin123",TLE="admin123",storageCapacity=0,powerCapacity=0,fieldOfView=0)
-    add_SatelliteSchedule(scheduleId="admin123_schedule",activityWindowStart=datetime(2023, 1, 1, 00, 00, 00),activityWindowEnd=datetime(2023, 1, 1, 00, 00, 00),satellite=get_satellite_by_id("admin123"))
-    # print("satelliteSize: ")
-    # print(len(get_all_satellites()))
 
-    i=0
+def importTestCaseForSchedulingImagingTask(image_tasks_group):
+    # print('--------------------HELLO STAELLITE TASKS----------------------')
+    satellites, imaging_tasks = initialize_imaging_tasks(image_tasks_group)
+
+    for satellite in satellites:
+        add_satellite(satelliteId=satellite.name, tle=satellite.tle, storage_capacity=satellite.storage_capacity)
+    
     for imaging_task in imaging_tasks:
-        add_imagingTask(TaskID=imaging_task.name+str(i),revisitFrequency=1,priority=imaging_task.priority,imagingRegionLatitude=imaging_task.latitude,imagingRegionLongitude=imaging_task.longitude,imagingTime=imaging_task.start_time,deliveryTime=imaging_task.end_time,schedule=get_satelliteSchedule_by_id("admin123_schedule"),startTime=imaging_task.start_time,endTime=imaging_task.end_time, duration=imaging_task.duration)
-        i = i+1
-    # print("task size: ")
-    # print(len(get_all_imagingTask()))
+        add_imageTask(name = imaging_task.name,
+                        start_time = imaging_task.start_time,
+                        end_time = imaging_task.end_time,
+                        priority = imaging_task.priority,
+                        duration = imaging_task.duration,
+                        # satellite = imaging_task.satellite,
+                        image_type=imaging_task.image_type,
+                        imagingRegionLatitude=imaging_task.imagingRegionLatitude,
+                        imagingRegionLongitude=imaging_task.imagingRegionLongitude,
+                        achievability=imaging_task.achievability,
+                        )
+    print('IMPORT FINISHED.')
 
 def performingAlgorithumImaginTask():
+    # satelliteId = "SOSO-1"
+    # satellite = Satellite.objects.get(satelliteId)
+    # print(satellite.schedules.all())
+
+    # satellites = Satellite.objects.all()
+
     #transfer data from DB to algorithm data
     satellites = get_all_satellites()
-    imaging_tasks = get_all_imagingTask()
-    satelliteDatas = []
-    for satellite in satellites:
-        activity_window = (satellite.satelliteSchedule.activityWindowStart,satellite.satelliteSchedule.activityWindowEnd)
-        satelliteDatas.append(SatelliteData(name=satellite.satelliteId,activity_window=activity_window,tle=satellite.TLE))
-    imaging_taskDatas = []
-    for imaging_task in imaging_tasks:
-        imaging_taskDatas.append(ImageTaskData(name=imaging_task.TaskID,start_time=imaging_task.startTime,end_time=imaging_task.endTime,duration=imaging_task.duration,priority=imaging_task.priority,image_type=ImageTypeData.MEDIUM,latitude=imaging_task.imagingRegionLatitude,longitude=imaging_task.imagingRegionLongitude))
-    # print("imaing tasks size: ")
-    # print(len(imaging_taskDatas))
-    #performing edf
-    print('-----------imaging tasks-------------')
-    priority_list = group_by_priority(imaging_taskDatas)
+    print(f'Got {len(satellites)} satellites')
+    set_satellites(satellites)
 
-    # print_priority_list(priority_list)
+    imaging_tasks = get_all_imageTask()
+    print(f'Got{len(imaging_tasks)} tasks')
+    imaging_tasks_prio = group_by_priority(imaging_tasks)
 
-    edf(priority_list, satelliteDatas)
+    set_global_time("2023-10-02 00:00:00")
 
-    print('------------------')
-    total=0
-    for satellite in satelliteDatas:
-        print(satellite.name, ':')
-        total += len(satellite.schedule)
-        for t in satellite.schedule:
-            print(t[0].name)
-    print(f'{total} imaging tasks got scheduled.')
+    # perform edf
+    for prio in imaging_tasks_prio:
+        for imaging_task in imaging_tasks_prio[prio]:
+            add_new_imaging_task(imaging_task)
 
-    #transfer data back to database
-    for satellite in satelliteDatas:
-        for t in satellite.schedule:
-            it = get_imagingTask_by_id(t[0].name)
-            satellite_schedule = get_satellite_by_id(satellite.name).satelliteSchedule
-            updata_imagingTask_info(TaskID=t[0].name,revisitFrequency=it.revisitFrequency,priority=it.priority,imagingRegionLatitude= it.imagingRegionLatitude,imagingRegionLongitude=it.imagingRegionLongitude,imagingTime=it.imagingTime,deliveryTime=it.deliveryTime,schedule=satellite_schedule,startTime=it.startTime,endTime=it.endTime,duration=it.duration)
+            total=0
+            for satellite in satellites:
+                print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.storage_capacity}------")
+                schedule = json.loads(satellite.schedule)
+                total += len(schedule)
+                for t in schedule:
+                    print(f"{t[0].name}         {t[1]} --> {t[2]}")
+                    # print(t[0].name, t[1], t[2])
+                
+                maintenance_without_outage = json.loads(satellite.maintenance_without_outage)
+                print("(Maintenances without payload outage: )")
+                total += len(maintenance_without_outage)
+                for t in maintenance_without_outage:
+                    print(f"{t[0].name}         {t[1]} --> {t[2]}")
+            print(f'{total} imaging tasks got scheduled.')
+    
+    return total
+
 
 ####################ground station scheduling########################
 def sortSatellitesByDeadlineAndTaskPriorityAndNumberOfTasks():

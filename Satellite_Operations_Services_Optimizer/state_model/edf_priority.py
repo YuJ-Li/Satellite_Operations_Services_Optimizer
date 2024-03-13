@@ -1,5 +1,5 @@
 import datetime as dt
-from scheduling_algorithm import MaintenanceTask
+# from .scheduling_algorithm import MaintenanceTask
 
 def group_by_priority(task_list):
     priority_list = {}
@@ -144,9 +144,9 @@ def find_next_slot(satellite, ptr):
     if len(satellite_schedule)==0: 
         return satellite.activity_window[0], satellite.activity_window[1], 0 # if nothing has been scheduled on the satellite yet, return the entire availility of the satellite
     if ptr == -1: # if pointer is pointing at the beginning of the schedule
-        if isinstance(satellite_schedule[0], MaintenanceTask) and not satellite_schedule[0].payload_outage: # if the first activity is a maintenance task and it does not affect payload
-            return satellite.activity_window[0], satellite_schedule[1][1], ptr+1 # available time slot lasts until the beginning of the next maintenance task
-        elif satellite_schedule[0][1] - satellite.activity_window[0] > dt.timedelta(seconds=0): # if there is space between the start of activity window and the start of first task
+        # if isinstance(satellite_schedule[0], MaintenanceTask) and not satellite_schedule[0].payload_outage: # if the first activity is a maintenance task and it does not affect payload
+        #     return satellite.activity_window[0], satellite_schedule[1][1], ptr+1 # available time slot lasts until the beginning of the next maintenance task
+        if satellite_schedule[0][1] - satellite.activity_window[0] > dt.timedelta(seconds=0): # if there is space between the start of activity window and the start of first task
             return satellite.activity_window[0], satellite_schedule[0][1], ptr+1
         ptr += 1
     for i in range(ptr, len(satellite_schedule)-1):

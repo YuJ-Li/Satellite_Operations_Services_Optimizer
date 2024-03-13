@@ -8,11 +8,12 @@ import math
 from geopy.distance import geodesic
 from datetime import timezone
 import copy
+from .models import Satellite, ImageTask, MaintenanceTask, GroundStation, GroundStationRequest, Outage, SatelliteTask
 # from edf_priority import *
 
-# satellite constants
+# # satellite constants
 SATELLITE_FULL_VIEW_ANGLE = 60
-STORAGE_CAPACITY = 32 * 1024 # GB
+STORAGE_CAPACITY = 32.0 * 1024.0 # GB
 # Image types constants
 HIGH_WRITING_TIME = 120
 HIGH_SIZE = 512 # MB
@@ -24,8 +25,7 @@ LOW_WRITING_TIME = 20
 LOW_SIZE = 128 # MB
 LOW_DIMENSION = [40,20]
 
-# TODO: MOVE TO REPOSITORY.PY
-# PLEASE ADD THESE GLOBAL VARIABLES TO MODEL
+
 ACCUMULATED_IMAGING_TASKS = {} # a priority dictionary
 ACCUMULATED_MAINTENANCE_TASKS = {} # a priority dictionary
 IMAGING_TASK_HISTORY = []
@@ -35,45 +35,45 @@ GLOBAL_TIME = datetime.now(timezone.utc)
 ACTIVITY_WINDOW = (GLOBAL_TIME, GLOBAL_TIME + dt.timedelta(hours=2))
 ###################################### CLASSES ###########################################
 
-class Task:
-    def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
-        self.name = name
-        self.start_time = start_time
-        self.end_time = end_time
-        self.duration = duration
-        self.priority = priority # imaging tasks: priority from 3 to 1 = from high to low; maintenance activity: priority = 4 (highest)
-        self.satellite = satellite # to be determined by the scheduling algorithm
+# class Task:
+#     def __init__(self, name, start_time, end_time, duration, priority, satellite = None):
+#         self.name = name
+#         self.start_time = start_time
+#         self.end_time = end_time
+#         self.duration = duration
+#         self.priority = priority # imaging tasks: priority from 3 to 1 = from high to low; maintenance activity: priority = 4 (highest)
+#         self.satellite = satellite # to be determined by the scheduling algorithm
 
-class Satellite:
-    def __init__(self, name, tle):
-        self.name = name
-        # self.ACTIVITY_WINDOW = ACTIVITY_WINDOW
-        self.schedule = [] # list of ((task_object, actual_start_time, real_end_time))
-        self.maintenance_without_outage = []  # list of ((maintenance_activity, actual_start_time, real_end_time)) that does not cause payload outage
-        self.tle = tle
-        self.capacity = STORAGE_CAPACITY
-        self.capacity_used = 0 
+# class Satellite:
+#     def __init__(self, name, tle):
+#         self.name = name
+#         # self.ACTIVITY_WINDOW = ACTIVITY_WINDOW
+#         self.schedule = [] # list of ((task_object, actual_start_time, real_end_time))
+#         self.maintenance_without_outage = []  # list of ((maintenance_activity, actual_start_time, real_end_time)) that does not cause payload outage
+#         self.tle = tle
+#         self.capacity = STORAGE_CAPACITY
+#         self.capacity_used = 0 
 
-class MaintenanceTask(Task):
-    def __init__(self, name, start_time, end_time, duration, priority, satellite, payload_outage, min_gap = None, max_gap = None):
-        super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
-        self.next_maintenance = None
-        self.is_head = False
-        self.min_gap = min_gap
-        self.max_gap = max_gap
-        self.payload_outage = payload_outage
+# class MaintenanceTask(Task):
+#     def __init__(self, name, start_time, end_time, duration, priority, satellite, payload_outage, min_gap = None, max_gap = None):
+#         super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
+#         self.next_maintenance = None
+#         self.is_head = False
+#         self.min_gap = min_gap
+#         self.max_gap = max_gap
+#         self.payload_outage = payload_outage
 
-class ImageTask(Task):
-    def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None):
-        super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
-        self.image_type = image_type
-        self.latitude = latitude
-        self.longitude = longitude
+# class ImageTask(Task):
+#     def __init__(self, image_type, latitude, longitude, name, start_time, end_time, duration, priority, satellite = None):
+#         super().__init__(name = name, start_time = start_time, end_time = end_time, duration = duration, priority = priority, satellite = satellite)
+#         self.image_type = image_type
+#         self.latitude = latitude
+#         self.longitude = longitude
 
-class ImageType(Enum):
-    HIGH = {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
-    MEDIUM = {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
-    LOW = {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
+# class ImageType(Enum):
+#     HIGH = {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
+#     MEDIUM = {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
+#     LOW = {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
 
 
 ####################################### EDF Functions ###############################################
@@ -104,8 +104,10 @@ def edf_imaging(priority_list):
         tasks.sort(key=lambda x: (x.end_time,x.start_time)) # for each priority group, sort tasks by end time then by start time
         for task in tasks:
             scheduled = False
+            task_achi = json.loads(task.achievability)
+            print('hello',task_achi)
 
-            valid_keys = [key for key, value in task.achievability.items() if value != []] # list of satellites that can see this task in task's time window
+            valid_keys = [key for key, value in task_achi.items() if value != []] # list of satellites that can see this task in task's time window
             if valid_keys is None: # if this task is not in the FOV of any satellite within its available time window
                 add_task_to_priority_list(unscheduled_tasks, task) # consider it as non schedulable
                 continue 
@@ -116,19 +118,22 @@ def edf_imaging(priority_list):
                 if task.satellite is not None and task.satellite != satellite: continue
                 if satellite.capacity_used + task.image_type.value['size'] > satellite.capacity: continue
                 schedule_ptr = -1
-                while not scheduled and schedule_ptr<len(satellite.schedule):
+                satellite_schedule = json.loads(satellite.schedule)
+                while not scheduled and schedule_ptr<len(satellite_schedule):
                     empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
                     # print(f"for {task.name} on {satellite.name}: {empty_slot_start} -- {empty_slot_end}")
-                    imaging_taking_time = check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, task, task.achievability[satellite])
+                    imaging_taking_time = check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, task, task_achi[satellite])
                     if imaging_taking_time:
                         scheduled_start = imaging_taking_time
                         scheduled_end = scheduled_start + task.duration
-                        satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                        satellite_schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
                         satellite.capacity_used += task.image_type.value['size']
                         scheduled = True
                         # print(f'{task.name} is scheduled on {satellite.name}.')
                         break
-                if scheduled: break
+                if scheduled: 
+                    satellite.schedule = json.dumps(satellite_schedule)
+                    break
             if not scheduled:
                 add_task_to_priority_list(unscheduled_tasks, task)
     return unscheduled_tasks
@@ -180,21 +185,24 @@ def schedule_maintenance_task(task, satellite):
     scheduled = False
     scheduled_start = None
     schedule_ptr = -1
-    while not scheduled and schedule_ptr<len(satellite.schedule):
+    satellite_schedule = satellite.schedule
+    while not scheduled and schedule_ptr<len(satellite_schedule):
         empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
         if empty_slot_start is not None and empty_slot_end is not None:
             if task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
                 scheduled_start = empty_slot_start
                 scheduled_end = scheduled_start + task.duration
-                satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                satellite_schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
                 scheduled = True
+                satellite.schedule = json.dumps(satellite_schedule)
                 # print(f'{task.name} is scheduled on {satellite.name}.')
                 break
             elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
                 scheduled_start = task.start_time
                 scheduled_end = scheduled_start + task.duration
-                satellite.schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
+                satellite_schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
                 scheduled = True
+                satellite.schedule = json.dumps(satellite_schedule)
                 # print(f'{task.name} is scheduled on {satellite.name}.')
                 break 
     return scheduled,scheduled_start
@@ -203,7 +211,7 @@ def find_next_slot(satellite, ptr):
     '''ptr is the index of task scheduled on this satellite from which we start to find empty slot'''
     global ACTIVITY_WINDOW
 
-    satellite_schedule = satellite.schedule
+    satellite_schedule = json.loads(satellite.schedule)
     if len(satellite_schedule)==0: 
         return ACTIVITY_WINDOW[0], ACTIVITY_WINDOW[1], 0 # if nothing has been scheduled on the satellite yet, return the entire availility of the satellite
     if ptr == -1: # if pointer is pointing at the beginning of the schedule
@@ -225,7 +233,7 @@ def find_next_slot(satellite, ptr):
 
 
 def sort_satellites_by_number_of_tasks(satellites):
-    sorted_satellites = sorted(satellites, key=lambda x: len(x.schedule))
+    sorted_satellites = sorted(satellites, key=lambda x: len(json.dumps(x.schedule)))
     return sorted_satellites
 
 
@@ -245,11 +253,14 @@ def convert_str_to_datetime(datetime_str):
 def get_image_type(image_type):
     match image_type:
         case "Low":
-            return ImageType.LOW
+            return {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
+            # return ImageTask.LOW
         case "Medium":
-            return ImageType.MEDIUM
+            return {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
+            # return ImageTask.MEDIUM
         case "High":
-            return ImageType.HIGH
+            return {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
+            # return ImageTask.HIGH
         
 def get_satellite_by_name(satellites, name):
     for satellite in satellites:
@@ -408,12 +419,12 @@ def construct_and_add_revisit_imaging_tasks(num_revisit, revisit_frequency, freq
     return task_list
 
 def define_and_add_imagaing_task(satellites2, image_type, lat, lon, name, start_time, end_time, duration, priority):
-    new_imaging_task = ImageTask(image_type=image_type, latitude=lat, longitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority)
+    new_imaging_task = ImageTask(image_type=image_type, imagingRegionLatitude=lat, imagingRegionLongitude=lon, name=name,start_time=start_time, end_time=end_time, duration=duration, priority=priority, achievability=json.dumps({}))
     # find satellites find_satellite_achievabilities for this imaging task
     achievabilities = {}
     for s in satellites2:
         achievabilities[s] = find_satellite_achievabilities(s,new_imaging_task)
-    new_imaging_task.achievability = achievabilities
+    new_imaging_task.achievability = json.dumps(achievabilities)
     # imaging_tasks.append(new_imaging_task)
     return new_imaging_task
 
@@ -450,7 +461,7 @@ def get_global_time():
 
 
 # Trigger of adding new task
-def add_new_imaging_task(task_json, name):
+def add_new_imaging_task(task):
     global ACCUMULATED_IMAGING_TASKS
     global SATELLITES
     global GLOBAL_TIME
@@ -458,18 +469,15 @@ def add_new_imaging_task(task_json, name):
     # clear expired tasks from the task lists
     clear_expired_tasks(ACCUMULATED_IMAGING_TASKS)
 
-    # convert the json file to an imaging task object
-    tasks = convert_json_to_imaging_task(task_json, name)
-
     # determine if the new tasks are potentially achievable according to the current time, if yes, add the new tasks to the pool 
-    for task in tasks:
-        if task.end_time - task.duration > GLOBAL_TIME: # if the lastest start time is later than current time
-            # then this task is potentially feasible, add it to the list
-            if ACCUMULATED_IMAGING_TASKS.get(task.priority) is None:
-                ACCUMULATED_IMAGING_TASKS[task.priority] = [task]
-                ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
-            else:
-                ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
+    # for task in tasks:
+    if task.end_time - task.duration > GLOBAL_TIME: # if the lastest start time is later than current time
+        # then this task is potentially feasible, add it to the list
+        if ACCUMULATED_IMAGING_TASKS.get(task.priority) is None:
+            ACCUMULATED_IMAGING_TASKS[task.priority] = [task]
+            ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
+        else:
+            ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
     
     # clear tasks that has been finished and that is being executed at current time
     update_imaging_pool()
@@ -491,12 +499,14 @@ def update_imaging_pool():
     global SATELLITES
     global GLOBAL_TIME
     for s in SATELLITES:
+        schedule = json.loads(s.schedule)
         tasks_to_remove = []
-        for t in s.schedule:
+        for t in schedule:
             if isinstance(t[0], ImageTask): # if the imaging task has not been executed (hasn's started) yet
                 process_image_task(tasks_to_remove, t)
         for task in tasks_to_remove:
-            s.schedule.remove(task) 
+            schedule.remove(task) 
+        s.schedule = json.dumps(schedule)
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
 '''
@@ -512,20 +522,24 @@ def update_maintenenace_and_imaging_pool():
 
     for s in SATELLITES:
         tasks_to_remove = []
-        for t in s.schedule:
+        schedule = json.loads(s.schedule)
+        for t in schedule:
             if isinstance(t[0], ImageTask):
                 process_image_task(tasks_to_remove, t)
             elif isinstance(t[0], MaintenanceTask): # if the maintenance task has not been executed (hasn's started) yet
                 process_maintenance_task(tasks_to_remove, t)
 
         for task in tasks_to_remove:
-            s.schedule.remove(task)
+            schedule.remove(task)
+        s.schedule = json.dumps(schedule)
 
         tasks_to_remove = []
-        for t in s.maintenance_without_outage:
+        no_outage_tasks = json.loads(s.maintenance_without_outage)
+        for t in no_outage_tasks:
             process_maintenance_task(tasks_to_remove, t)
         for task in tasks_to_remove:
-            s.maintenance_without_outage.remove(task)
+            no_outage_tasks.remove(task)
+        s.maintenance_without_outage = json.dumps(no_outage_tasks)
 
     # sort task list by priority
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
@@ -605,8 +619,9 @@ def convert_json_to_imaging_task(task_json, name):
     priority = data["Priority"]
     start_time = convert_str_to_datetime(data["ImageStartTime"])
     end_time = convert_str_to_datetime(data["ImageEndTime"])
-    image_type = get_image_type(data["ImageType"])
-    duration = dt.timedelta(seconds=int(image_type.value['time_for_writing']))
+    image_type = data["ImageType"]
+    # print(f'THE IMAGE TYPE IS: {image_type}')
+    duration = dt.timedelta(seconds=int(get_image_type(image_type)['time_for_writing']))
     lat = data["Latitude"]
     lon = data["Longitude"]
     # revisit frequency
@@ -659,11 +674,15 @@ def add_new_maintenance_task(task_json, name):
     ACCUMULATED_MAINTENANCE_TASKS = edf_maintenance(ACCUMULATED_MAINTENANCE_TASKS)
     # remove non-outage maintenance activities from the schedule and add them to another list
     for s in SATELLITES:
-        for t in s.schedule:
+        schedule = json.loads(s.schedule)
+        no_outage_tasks = json.loads(s.maintenance_without_outage)
+        for t in schedule:
             if isinstance(t[0], MaintenanceTask) and not t[0].payload_outage:
-                s.maintenance_without_outage.append(t)
-        for t in s.maintenance_without_outage:
-            s.schedule.remove(t)
+                no_outage_tasks.append(t)
+        for t in no_outage_tasks:
+            schedule.remove(t)
+        s.schedule = json.dumps(schedule)
+        s.maintenance_without_outage = json.dumps(no_outage_tasks)
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS)
     
     return 0
@@ -686,6 +705,69 @@ def convert_json_to_maintenance_task(task_json, name):
         new_task = construct_and_add_revisit_maintenance_tasks(int(num_repetition), payload_outage, min_gap, max_gap, name, start_time, end_time, duration, target)
     new_task.is_head = True
     return new_task
+
+def set_satellites(satellites):
+    global SATELLITES
+    # for s in satellites:
+    #     s.schedule = json.loads(s.schedule)
+    SATELLITES = satellites
+
+def initialize_imaging_tasks(imaging_path):
+    global ACCUMULATED_IMAGING_TASKS
+    with open('/app/TLE/tle3/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+    with open('/app/TLE/tle3/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+
+    satellites = [Satellite(name='SOSO-1', tle=tle1, storage_capacity=STORAGE_CAPACITY, capacity_used=0.0),
+            Satellite(name='SOSO-2', tle=tle2, storage_capacity=STORAGE_CAPACITY, capacity_used=0.0),
+            Satellite(name='SOSO-3', tle=tle3, storage_capacity=STORAGE_CAPACITY, capacity_used=0.0),
+            Satellite(name='SOSO-4', tle=tle4, storage_capacity=STORAGE_CAPACITY, capacity_used=0.0),
+            Satellite(name='SOSO-5', tle=tle5, storage_capacity=STORAGE_CAPACITY, capacity_used=0.0)]
+ 
+    
+    imaging_json_files = read_directory(imaging_path)
+    print(f'{imaging_path} contains {len(imaging_json_files)} files.')
+    # POINT = 0
+    imaging_tasks = []
+    for json_file in imaging_json_files[:50]:
+        # POINT += 1
+        # if POINT == 20: set_global_time("2023-10-02 10:00:00")
+        file_path = os.path.join(imaging_path, json_file)
+        # print(json_file.split('/')[-1].split('.')[0])
+        with open(file_path, 'r') as file:
+            task_name = json_file.split('/')[-1].split('.')[0]
+            # print(f"\nscheduling task {task_name}...")
+            # add_new_imaging_task(file, name = task_name)
+            # convert the json file to an imaging task object
+            tasks = convert_json_to_imaging_task(file, task_name)
+            imaging_tasks.extend(tasks)
+
+            # for satellite in SATELLITES:
+            #     print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+            #     for t in satellite.schedule:
+            #         print(f"{t[0].name}         {t[1]} --> {t[2]}")
+
+    return satellites, imaging_tasks
+
+# def initialize_maintenance_tasks(maintenance_path):
+#     global ACCUMULATED_MAINTENANCE_TASKS
+#     return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # TESTS
 ############################### Initialize satellites group 1 ################################
