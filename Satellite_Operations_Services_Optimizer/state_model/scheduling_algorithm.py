@@ -95,7 +95,7 @@ def print_priority_list(priority_list):
         print(s)
 
 
-def edf_imaging(priority_list):
+def edf_imaging(priority_list,satellites):
     ''' priority_tasks is a dictionary of tasks grouped by priority'''
     unscheduled_tasks = {} # to store un sc
     # sorts tasks in each priority group by deadline
@@ -105,9 +105,8 @@ def edf_imaging(priority_list):
         for task in tasks:
             scheduled = False
             task_achi = json.loads(task.achievability)
-            print('hello',task_achi)
 
-            valid_keys = [key for key, value in task_achi.items() if value != []] # list of satellites that can see this task in task's time window
+            valid_keys = [get_satellite_by_name(satellites,key) for key, value in task_achi.items() if value != []] # list of satellites that can see this task in task's time window
             if valid_keys is None: # if this task is not in the FOV of any satellite within its available time window
                 add_task_to_priority_list(unscheduled_tasks, task) # consider it as non schedulable
                 continue 
@@ -115,19 +114,23 @@ def edf_imaging(priority_list):
             valid_keys = sort_satellites_by_number_of_tasks(valid_keys)
             
             for satellite in valid_keys:
-                if task.satellite is not None and task.satellite != satellite: continue
-                if satellite.capacity_used + task.image_type.value['size'] > satellite.capacity: continue
+                # if task.satellite is not None and task.satellite != satellite: continue
+                if satellite.capacity_used + get_image_type(task.image_type)['size'] > satellite.storage_capacity: continue
                 schedule_ptr = -1
                 satellite_schedule = json.loads(satellite.schedule)
                 while not scheduled and schedule_ptr<len(satellite_schedule):
                     empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
+                    if not isinstance(empty_slot_start, datetime):
+                        empty_slot_start = convert_str_to_datetime(empty_slot_start)
+                    if not isinstance(empty_slot_end, datetime):
+                        empty_slot_end = convert_str_to_datetime(empty_slot_end)
                     # print(f"for {task.name} on {satellite.name}: {empty_slot_start} -- {empty_slot_end}")
-                    imaging_taking_time = check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, task, task_achi[satellite])
+                    imaging_taking_time = check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, task, task_achi[satellite.name])
                     if imaging_taking_time:
                         scheduled_start = imaging_taking_time
                         scheduled_end = scheduled_start + task.duration
-                        satellite_schedule.insert(schedule_ptr, (task, scheduled_start, scheduled_end)) 
-                        satellite.capacity_used += task.image_type.value['size']
+                        satellite_schedule.insert(schedule_ptr, (task.name, convert_datetime_to_str(scheduled_start), convert_datetime_to_str(scheduled_end))) 
+                        satellite.capacity_used += get_image_type(task.image_type)['size']
                         scheduled = True
                         # print(f'{task.name} is scheduled on {satellite.name}.')
                         break
@@ -143,6 +146,7 @@ def check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, ima
     @param satellite_achievability: the timeslots when the specific imaging area is in the FOV of the specific satellite
     Consider the duration of the task and the fact that taking the image (time required for the entire image to stay in the FOV) is one shot'''
     for (fov_st, fov_et) in satellite_achievability:
+        fov_st, fov_et = convert_str_to_datetime(fov_st), convert_str_to_datetime(fov_et)
         if fov_st <= empty_slot_start and fov_et >= empty_slot_start:
             # image taking happens at empty_slot_start
             if empty_slot_start + imaging_task.duration <= empty_slot_end and empty_slot_start + imaging_task.duration <= imaging_task.end_time:
@@ -215,19 +219,19 @@ def find_next_slot(satellite, ptr):
     if len(satellite_schedule)==0: 
         return ACTIVITY_WINDOW[0], ACTIVITY_WINDOW[1], 0 # if nothing has been scheduled on the satellite yet, return the entire availility of the satellite
     if ptr == -1: # if pointer is pointing at the beginning of the schedule
-        if isinstance(satellite_schedule[0], MaintenanceTask) and not satellite_schedule[0].payload_outage: # if the first activity is a maintenance task and it does not affect payload
+        if isinstance(get_task_by_name(satellite_schedule[0]), MaintenanceTask) and not get_task_by_name(satellite_schedule[0]).payload_outage: # if the first activity is a maintenance task and it does not affect payload
             return ACTIVITY_WINDOW[0], satellite_schedule[1][1], ptr+1 # available time slot lasts until the beginning of the next maintenance task
-        elif satellite_schedule[0][1] - ACTIVITY_WINDOW[0] > dt.timedelta(seconds=0): # if there is space between the start of activity window and the start of first task
+        elif convert_str_to_datetime(satellite_schedule[0][1]) - ACTIVITY_WINDOW[0] > dt.timedelta(seconds=0): # if there is space between the start of activity window and the start of first task
             return ACTIVITY_WINDOW[0], satellite_schedule[0][1], ptr+1
         ptr += 1
     for i in range(ptr, len(satellite_schedule)-1):
         # TODO: maintenance task without payload outage          
-        if satellite_schedule[i+1][1] - satellite_schedule[i][2] > dt.timedelta(seconds=0): # if there is time between the start of next task and the end of this task
+        if convert_str_to_datetime(satellite_schedule[i+1][1]) - convert_str_to_datetime(satellite_schedule[i][2]) > dt.timedelta(seconds=0): # if there is time between the start of next task and the end of this task
             return satellite_schedule[i][2],satellite_schedule[i+1][1], i+1
         ptr += 1
     if ptr == len(satellite_schedule)-1:
         # TODO: maintenance task without payload outage
-        if ACTIVITY_WINDOW[1] - satellite_schedule[ptr][2] > dt.timedelta(seconds=0):
+        if ACTIVITY_WINDOW[1] - convert_str_to_datetime(satellite_schedule[ptr][2]) > dt.timedelta(seconds=0):
             return satellite_schedule[ptr][2], ACTIVITY_WINDOW[1], ptr+1
     return None, None, ptr+1
 
@@ -268,16 +272,26 @@ def get_satellite_by_name(satellites, name):
             return satellite
     return None
 
+def get_task_by_name(name):
+    global ACCUMULATED_IMAGING_TASKS
+    global ACCUMULATED_MAINTENANCE_TASKS
+    for prio in ACCUMULATED_IMAGING_TASKS:
+        for task in ACCUMULATED_IMAGING_TASKS[prio]:
+            if task.name == name: return task
+    for prio in ACCUMULATED_MAINTENANCE_TASKS:
+        for task in ACCUMULATED_MAINTENANCE_TASKS[prio]:
+            if task.name == name: return task
+    return None
 
 def find_four_corner_coor(imaging_task):
     '''Given an imaging task (containing info of coordinates of imaging center, and image size),
     output the coordinates of the four corners of the image.'''
     # Calculate half-length and half-width
-    half_length = imaging_task.image_type.value['dimension'][0] / 2
-    half_width = imaging_task.image_type.value['dimension'][1] / 2
+    half_length = get_image_type(imaging_task.image_type)['dimension'][0] / 2
+    half_width = get_image_type(imaging_task.image_type)['dimension'][1] / 2
 
     # Extract latitude and longitude of the center
-    center_lat, center_lon = imaging_task.latitude, imaging_task.longitude
+    center_lat, center_lon = imaging_task.imagingRegionLatitude, imaging_task.imagingRegionLongitude
 
     distance = math.sqrt(half_width**2+half_length**2)
     angle = math.degrees(math.atan(half_width/half_length))
@@ -399,6 +413,11 @@ def find_satellite_achievabilities(satellite, imaging_task):
         achievability_lists.append(find_satellite_achievability_of_point(satellite, imaging_task, corner.latitude, corner.longitude)) # append timeslots of a corner
     common_achievabilities = find_common_achievability(achievability_lists)
     # print(common_achievabilities)
+    # convert datetime objects in achievabilities to strings
+    for i,(dt1, dt2) in enumerate(common_achievabilities):
+        dt1 = convert_datetime_to_str(dt1)
+        dt2 = convert_datetime_to_str(dt2)
+        common_achievabilities[i] = (dt1, dt2)
     return common_achievabilities
 
 
@@ -423,7 +442,7 @@ def define_and_add_imagaing_task(satellites2, image_type, lat, lon, name, start_
     # find satellites find_satellite_achievabilities for this imaging task
     achievabilities = {}
     for s in satellites2:
-        achievabilities[s] = find_satellite_achievabilities(s,new_imaging_task)
+        achievabilities[s.name] = find_satellite_achievabilities(s,new_imaging_task)
     new_imaging_task.achievability = json.dumps(achievabilities)
     # imaging_tasks.append(new_imaging_task)
     return new_imaging_task
@@ -461,9 +480,9 @@ def get_global_time():
 
 
 # Trigger of adding new task
-def add_new_imaging_task(task):
+def add_new_imaging_task(satellites,task):
     global ACCUMULATED_IMAGING_TASKS
-    global SATELLITES
+    # global SATELLITES
     global GLOBAL_TIME
 
     # clear expired tasks from the task lists
@@ -483,11 +502,11 @@ def add_new_imaging_task(task):
     update_imaging_pool()
 
     # reset satellite capacity
-    for s in SATELLITES:
+    for s in satellites:
         s.capacity_used = 0
             
     # do EDF
-    ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS)
+    ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
     
     return 0
 
@@ -607,9 +626,8 @@ def add_task_to_priority_list(priority_list, task):
 
 
 
-def convert_json_to_imaging_task(task_json, name):
+def convert_json_to_imaging_task(task_json, name, satellites):
     global ACCUMULATED_IMAGING_TASKS
-    global SATELLITES
     task_list = []
 
     # TODO: CREATE A UNIQUE ID FOR EACH TASK  
@@ -627,15 +645,15 @@ def convert_json_to_imaging_task(task_json, name):
     # revisit frequency
     recurrence = data["Recurrence"]["Revisit"] 
     if recurrence == "False":
-        new_imaging_task = define_and_add_imagaing_task(SATELLITES, image_type, lat, lon, name, start_time, end_time, duration, priority)
+        new_imaging_task = define_and_add_imagaing_task(satellites, image_type, lat, lon, name, start_time, end_time, duration, priority)
         task_list.append(new_imaging_task)
     elif recurrence == "True":
         num_revisit = int(data["Recurrence"]["NumberOfRevisits"])
         revisit_frequency = data["Recurrence"]["RevisitFrequency"]
         frequency_unit = data["Recurrence"]["RevisitFrequencyUnits"]
-        new_imaging_task = define_and_add_imagaing_task(SATELLITES, image_type, lat, lon, name, start_time, end_time, duration, priority)
+        new_imaging_task = define_and_add_imagaing_task(satellites, image_type, lat, lon, name, start_time, end_time, duration, priority)
         task_list.append(new_imaging_task)
-        tasks = construct_and_add_revisit_imaging_tasks(num_revisit, revisit_frequency, frequency_unit, SATELLITES, image_type, lat, lon, name, start_time, end_time, duration, priority)
+        tasks = construct_and_add_revisit_imaging_tasks(num_revisit, revisit_frequency, frequency_unit, satellites, image_type, lat, lon, name, start_time, end_time, duration, priority)
         task_list += tasks
     return task_list
 
@@ -741,7 +759,7 @@ def initialize_imaging_tasks(imaging_path):
             # print(f"\nscheduling task {task_name}...")
             # add_new_imaging_task(file, name = task_name)
             # convert the json file to an imaging task object
-            tasks = convert_json_to_imaging_task(file, task_name)
+            tasks = convert_json_to_imaging_task(file, task_name, satellites)
             imaging_tasks.extend(tasks)
 
             # for satellite in SATELLITES:
@@ -750,6 +768,19 @@ def initialize_imaging_tasks(imaging_path):
             #         print(f"{t[0].name}         {t[1]} --> {t[2]}")
 
     return satellites, imaging_tasks
+
+
+''' datetime and str conversion'''
+
+def convert_datetime_to_str(datetime_object):
+    # return str(datetime)
+    return datetime_object.strftime("%Y-%m-%dT%H:%M:%S")
+
+def convert_str_to_datetime(str):
+    naive = datetime.strptime(str, "%Y-%m-%dT%H:%M:%S")
+    return naive.replace(tzinfo=timezone.utc)
+     
+
 
 # def initialize_maintenance_tasks(maintenance_path):
 #     global ACCUMULATED_MAINTENANCE_TASKS
@@ -769,129 +800,129 @@ def initialize_imaging_tasks(imaging_path):
 
 
 
-# TESTS
-############################### Initialize satellites group 1 ################################
-# for TLE 1
-# with open('/app/TLE/tle1/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
-# with open('/app/TLE/tle1/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
-# with open('/app/TLE/tle1/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
-# with open('/app/TLE/tle1/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
-# with open('/app/TLE/tle1/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+# # TESTS
+# ############################### Initialize satellites group 1 ################################
+# # for TLE 1
+# # with open('/app/TLE/tle1/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+# # with open('/app/TLE/tle1/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+# # with open('/app/TLE/tle1/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+# # with open('/app/TLE/tle1/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+# # with open('/app/TLE/tle1/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
 
-# for TLE 2
-# with open('/app/TLE/tle2/SOSO-6_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
-# with open('/app/TLE/tle2/SOSO-7_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
-# with open('/app/TLE/tle2/SOSO-8_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
-# with open('/app/TLE/tle2/SOSO-9_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
-# with open('/app/TLE/tle2/SOSO-10_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+# # for TLE 2
+# # with open('/app/TLE/tle2/SOSO-6_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+# # with open('/app/TLE/tle2/SOSO-7_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+# # with open('/app/TLE/tle2/SOSO-8_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+# # with open('/app/TLE/tle2/SOSO-9_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+# # with open('/app/TLE/tle2/SOSO-10_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
 
-# for TLE 3
-with open('/app/TLE/tle3/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
-with open('/app/TLE/tle3/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
-with open('/app/TLE/tle3/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
-with open('/app/TLE/tle3/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
-with open('/app/TLE/tle3/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
+# # for TLE 3
+# with open('/app/TLE/tle3/SOSO-1_TLE.txt', 'r') as file: tle1 = file.read().split('\n')
+# with open('/app/TLE/tle3/SOSO-2_TLE.txt', 'r') as file: tle2 = file.read().split('\n')
+# with open('/app/TLE/tle3/SOSO-3_TLE.txt', 'r') as file: tle3 = file.read().split('\n')
+# with open('/app/TLE/tle3/SOSO-4_TLE.txt', 'r') as file: tle4 = file.read().split('\n')
+# with open('/app/TLE/tle3/SOSO-5_TLE.txt', 'r') as file: tle5 = file.read().split('\n')
 
-time_window_start = datetime(2023, 11, 18, 00, 00, 00, tzinfo=timezone.utc)
-time_window_end = datetime(2023, 11, 19, 23, 59, 59, tzinfo=timezone.utc) 
+# time_window_start = datetime(2023, 11, 18, 00, 00, 00, tzinfo=timezone.utc)
+# time_window_end = datetime(2023, 11, 19, 23, 59, 59, tzinfo=timezone.utc) 
 
-satellites1 = [Satellite('SOSO-1', tle1),
-            Satellite('SOSO-2', tle2),
-            Satellite('SOSO-3', tle3),
-            Satellite('SOSO-4', tle4),
-            Satellite('SOSO-5', tle5)]
+# satellites1 = [Satellite('SOSO-1', tle1),
+#             Satellite('SOSO-2', tle2),
+#             Satellite('SOSO-3', tle3),
+#             Satellite('SOSO-4', tle4),
+#             Satellite('SOSO-5', tle5)]
 
-############################### Initialize satellites group 2 ################################
-# for group 2 images
-# time_window_start = datetime(2023, 11, 18, 00, 00, 00)
-# time_window_end = datetime(2023, 11, 18, 23, 59, 59) 
+# ############################### Initialize satellites group 2 ################################
+# # for group 2 images
+# # time_window_start = datetime(2023, 11, 18, 00, 00, 00)
+# # time_window_end = datetime(2023, 11, 18, 23, 59, 59) 
 
-# for group 3 old images
-# time_window_start = datetime(2023, 10, 8, 00, 00, 00)
-# time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
+# # for group 3 old images
+# # time_window_start = datetime(2023, 10, 8, 00, 00, 00)
+# # time_window_end = datetime(2023, 10, 9, 23, 59, 59) 
 
-# for group 4 new images
-time_window_start = datetime(2023, 10, 2, 00, 00, 00, tzinfo=timezone.utc)
-time_window_end = datetime(2023, 10, 2, 23, 59, 59, tzinfo=timezone.utc) 
+# # for group 4 new images
+# time_window_start = datetime(2023, 10, 2, 00, 00, 00, tzinfo=timezone.utc)
+# time_window_end = datetime(2023, 10, 2, 23, 59, 59, tzinfo=timezone.utc) 
 
-satellites2 = [Satellite('SOSO-1',tle1),
-            Satellite('SOSO-2',tle2),
-            Satellite('SOSO-3',tle3),
-            Satellite('SOSO-4',tle4),
-            Satellite('SOSO-5',tle5)]
+# satellites2 = [Satellite('SOSO-1',tle1),
+#             Satellite('SOSO-2',tle2),
+#             Satellite('SOSO-3',tle3),
+#             Satellite('SOSO-4',tle4),
+#             Satellite('SOSO-5',tle5)]
     
-SATELLITES = satellites2
-set_global_time("2023-10-02 00:00:00")
+# SATELLITES = satellites2
+# set_global_time("2023-10-02 00:00:00")
 
-############################## process maintenance acticvities ############################### 
-# maintenance_path = "/app/order_samples/m_group2" # group 1 is a set of maintenance activities
-# maintenance_json_files = read_directory(maintenance_path)
-# print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
+# ############################## process maintenance acticvities ############################### 
+# # maintenance_path = "/app/order_samples/m_group2" # group 1 is a set of maintenance activities
+# # maintenance_json_files = read_directory(maintenance_path)
+# # print(f'{maintenance_path} contains {len(maintenance_json_files)} files.')
+
+# # POINT = 0
+# # for json_file in maintenance_json_files[:17]:
+# #     POINT += 1
+# #     if POINT == 15: set_global_time("2023-11-18 00:10:00")
+# #     file_path = os.path.join(maintenance_path, json_file)
+# #     with open(file_path, 'r') as file:
+# #         task_name = json_file.split('/')[-1].split('.')[0]
+# #         print(f"\nscheduling task {task_name}...")
+# #         add_new_maintenance_task(file, task_name)
+
+# #         for satellite in SATELLITES:
+# #             print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+# #             for t in satellite.schedule:
+# #                 print(f"{t[0].name}         {t[1]} --> {t[2]}")
+        
+
+# ############################### process imaging tasks ###############################
+# imaging_path = "/app/order_samples/group4_newest" # group 2 is a set of imaging tasks
+# imaging_json_files = read_directory(imaging_path)
+# print(f'{imaging_path} contains {len(imaging_json_files)} files.')
 
 # POINT = 0
-# for json_file in maintenance_json_files[:17]:
+# for json_file in imaging_json_files[:50]:
 #     POINT += 1
-#     if POINT == 15: set_global_time("2023-11-18 00:10:00")
-#     file_path = os.path.join(maintenance_path, json_file)
+#     if POINT == 20: set_global_time("2023-10-02 10:00:00")
+#     file_path = os.path.join(imaging_path, json_file)
+#     # print(json_file.split('/')[-1].split('.')[0])
 #     with open(file_path, 'r') as file:
 #         task_name = json_file.split('/')[-1].split('.')[0]
 #         print(f"\nscheduling task {task_name}...")
-#         add_new_maintenance_task(file, task_name)
+#         add_new_imaging_task(file, name = task_name)
 
 #         for satellite in SATELLITES:
 #             print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
 #             for t in satellite.schedule:
 #                 print(f"{t[0].name}         {t[1]} --> {t[2]}")
-        
-
-############################### process imaging tasks ###############################
-imaging_path = "/app/order_samples/group4_newest" # group 2 is a set of imaging tasks
-imaging_json_files = read_directory(imaging_path)
-print(f'{imaging_path} contains {len(imaging_json_files)} files.')
-
-POINT = 0
-for json_file in imaging_json_files[:50]:
-    POINT += 1
-    if POINT == 20: set_global_time("2023-10-02 10:00:00")
-    file_path = os.path.join(imaging_path, json_file)
-    # print(json_file.split('/')[-1].split('.')[0])
-    with open(file_path, 'r') as file:
-        task_name = json_file.split('/')[-1].split('.')[0]
-        print(f"\nscheduling task {task_name}...")
-        add_new_imaging_task(file, name = task_name)
-
-        for satellite in SATELLITES:
-            print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
-            for t in satellite.schedule:
-                print(f"{t[0].name}         {t[1]} --> {t[2]}")
 
 
 
-print("=================== LEFT OVER TASKS =======================")
-for key in ACCUMULATED_IMAGING_TASKS:
-    print(f"==========={key}===========")
-    for task in ACCUMULATED_IMAGING_TASKS[key]:
-        print(task.name)
+# print("=================== LEFT OVER TASKS =======================")
+# for key in ACCUMULATED_IMAGING_TASKS:
+#     print(f"==========={key}===========")
+#     for task in ACCUMULATED_IMAGING_TASKS[key]:
+#         print(task.name)
 
-print("=================== FINAL SCHEDULES =======================")
-total=0
-for satellite in SATELLITES:
-    print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
-    total += len(satellite.schedule)
-    for t in satellite.schedule:
-        print(f"{t[0].name}         {t[1]} --> {t[2]}")
-        # print(t[0].name, t[1], t[2])
-    print("(Maintenances without payload outage: )")
-    total += len(satellite.maintenance_without_outage)
-    for t in satellite.maintenance_without_outage:
-        print(f"{t[0].name}         {t[1]} --> {t[2]}")
-print(f'{total} tasks got scheduled.')
+# print("=================== FINAL SCHEDULES =======================")
+# total=0
+# for satellite in SATELLITES:
+#     print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.capacity}------")
+#     total += len(satellite.schedule)
+#     for t in satellite.schedule:
+#         print(f"{t[0].name}         {t[1]} --> {t[2]}")
+#         # print(t[0].name, t[1], t[2])
+#     print("(Maintenances without payload outage: )")
+#     total += len(satellite.maintenance_without_outage)
+#     for t in satellite.maintenance_without_outage:
+#         print(f"{t[0].name}         {t[1]} --> {t[2]}")
+# print(f'{total} tasks got scheduled.')
 
 
-print("=================== COMPLETED TASKS =======================")
-print("Images:")
-for t in IMAGING_TASK_HISTORY:
-    print(f"{t[0].name}         {t[1]} --> {t[2]}")
-print("Maintenances:")
-for t in MAINTENANCE_TASK_HISTORY:
-    print(f"{t[0].name}         {t[1]} --> {t[2]}")
+# print("=================== COMPLETED TASKS =======================")
+# print("Images:")
+# for t in IMAGING_TASK_HISTORY:
+#     print(f"{t[0].name}         {t[1]} --> {t[2]}")
+# print("Maintenances:")
+# for t in MAINTENANCE_TASK_HISTORY:
+#     print(f"{t[0].name}         {t[1]} --> {t[2]}")

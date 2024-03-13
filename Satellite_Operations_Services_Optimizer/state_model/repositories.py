@@ -526,7 +526,7 @@ def performingAlgorithumImaginTask():
     # perform edf
     for prio in imaging_tasks_prio:
         for imaging_task in imaging_tasks_prio[prio]:
-            add_new_imaging_task(imaging_task)
+            add_new_imaging_task(satellites,imaging_task)
 
             total=0
             for satellite in satellites:
@@ -534,14 +534,14 @@ def performingAlgorithumImaginTask():
                 schedule = json.loads(satellite.schedule)
                 total += len(schedule)
                 for t in schedule:
-                    print(f"{t[0].name}         {t[1]} --> {t[2]}")
+                    print(f"{t[0]}         {t[1]} --> {t[2]}")
                     # print(t[0].name, t[1], t[2])
                 
                 maintenance_without_outage = json.loads(satellite.maintenance_without_outage)
                 print("(Maintenances without payload outage: )")
                 total += len(maintenance_without_outage)
                 for t in maintenance_without_outage:
-                    print(f"{t[0].name}         {t[1]} --> {t[2]}")
+                    print(f"{t[0]}         {t[1]} --> {t[2]}")
             print(f'{total} imaging tasks got scheduled.')
     
     return total

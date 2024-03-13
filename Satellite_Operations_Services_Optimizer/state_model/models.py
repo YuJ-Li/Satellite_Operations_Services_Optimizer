@@ -3,7 +3,7 @@ import json
 
 
 class Satellite(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50, primary_key=True)
     maintenance_without_outage = models.TextField(default=json.dumps([]))
     schedule = models.TextField(default=json.dumps([]))
     tle = models.TextField() # Two-Line Element Set Format
@@ -19,7 +19,7 @@ class Satellite(models.Model):
 #     activityWindowEnd = models.DateTimeField()
 
 class SatelliteTask(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50, primary_key=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     priority = models.PositiveIntegerField()  # Assuming some integer representation
