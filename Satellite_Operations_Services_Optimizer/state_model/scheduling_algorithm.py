@@ -521,7 +521,7 @@ def update_imaging_pool():
                 process_image_task(tasks_to_remove, t)
         for task in tasks_to_remove:
             schedule.remove(task) 
-            s.capacity_used -= task.duration
+            s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
@@ -547,7 +547,7 @@ def update_maintenenace_and_imaging_pool():
 
         for task in tasks_to_remove:
             schedule.remove(task)
-            s.capacity_used -= task.duration
+            s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
 
         tasks_to_remove = []
@@ -556,7 +556,7 @@ def update_maintenenace_and_imaging_pool():
             process_maintenance_task(tasks_to_remove, t)
         for task in tasks_to_remove:
             no_outage_tasks.remove(task)
-            s.capacity_used -= task.duration
+            s.capacity_used -= get_image_type(task.image_type)['size']
         s.maintenance_without_outage = json.dumps(no_outage_tasks)
 
     # sort task list by priority
