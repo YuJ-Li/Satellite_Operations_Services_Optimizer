@@ -500,11 +500,7 @@ def add_new_imaging_task(satellites,task):
     
     # clear tasks that has been finished and that is being executed at current time
     update_imaging_pool()
-
-    # reset satellite capacity
-    for s in satellites:
-        s.capacity_used = 0
-            
+        
     # do EDF
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
     
@@ -525,6 +521,7 @@ def update_imaging_pool():
                 process_image_task(tasks_to_remove, t)
         for task in tasks_to_remove:
             schedule.remove(task) 
+            s.capacity_used -= task.duration
         s.schedule = json.dumps(schedule)
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
@@ -550,6 +547,7 @@ def update_maintenenace_and_imaging_pool():
 
         for task in tasks_to_remove:
             schedule.remove(task)
+            s.capacity_used -= task.duration
         s.schedule = json.dumps(schedule)
 
         tasks_to_remove = []
@@ -558,6 +556,7 @@ def update_maintenenace_and_imaging_pool():
             process_maintenance_task(tasks_to_remove, t)
         for task in tasks_to_remove:
             no_outage_tasks.remove(task)
+            s.capacity_used -= task.duration
         s.maintenance_without_outage = json.dumps(no_outage_tasks)
 
     # sort task list by priority
@@ -684,10 +683,7 @@ def add_new_maintenance_task(task_json, name):
     # clear tasks that has been finished and that is being executed at current time
     update_maintenenace_and_imaging_pool()
 
-    # reset satellite capacity
-    for s in SATELLITES:
-        s.capacity_used = 0
-            
+           
     # do EDF
     ACCUMULATED_MAINTENANCE_TASKS = edf_maintenance(ACCUMULATED_MAINTENANCE_TASKS)
     # remove non-outage maintenance activities from the schedule and add them to another list
