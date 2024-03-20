@@ -503,7 +503,6 @@ def importTestCaseForSchedulingImagingTask(satellites_group, image_tasks_group, 
                         imagingRegionLongitude=imaging_task.imagingRegionLongitude,
                         achievability=imaging_task.achievability,
                         )
-    print(f'!!!!converted {len(maintenance_tasks)} tasks')    
     for maintenance_task in maintenance_tasks:
         add_maintenanceTask(name = maintenance_task.name,
                             start_time = maintenance_task.start_time, 

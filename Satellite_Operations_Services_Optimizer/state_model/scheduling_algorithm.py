@@ -169,30 +169,24 @@ def edf_maintenance(priority_list, satellites):
     # sorts tasks in each priority group by deadline
     for p_group in priority_list.items(): 
         tasks = p_group[1]
-        print(f'found {len(tasks)} tasks to schedule')
         # tasks.sort(key=lambda x: (x.end_time,x.start_time)) # for each priority group, sort tasks by end time then by start time
         for task in tasks:
             if task.is_head: 
                 satellite = get_satellite_by_name(satellites, task.satellite.name)
                 scheduled, scheduled_start = schedule_maintenance_task(task, satellite)
                 if not scheduled:
-                    print('cannot be scheduled')
                     add_task_to_priority_list(unscheduled_tasks, task)
                     # print(f'Failed to schedule {task.name}.')
                 else:
-                    print('to be scheduled')
                     # schedule the next revisit activity
                     while scheduled and len(task.next_maintenance)>0:
-                        print('while loop: ', task.next_maintenance)
                         next_task = get_task_by_name_from_specific_list(task.next_maintenance, tasks)
                         next_task.start_time = scheduled_start + dt.timedelta(seconds=int(task.min_gap))
                         next_task.end_time = scheduled_start + dt.timedelta(seconds=int(task.max_gap)) + next_task.duration
                         scheduled, scheduled_start = schedule_maintenance_task(next_task, satellite)
                         task = next_task
-                    print('while loop ends')
                     # if not scheduled:
                     #     add_task_to_priority_list(unscheduled_tasks, next_task) # if a revisit activity failed to be scheduled, add it to the pool of unscheduled for future consideration
-                print('4.3')
     return unscheduled_tasks
 
 def schedule_maintenance_task(task, satellite):
@@ -723,17 +717,17 @@ def add_new_maintenance_task(satellites, task_group):
            
     # do EDF
     ACCUMULATED_MAINTENANCE_TASKS = edf_maintenance(ACCUMULATED_MAINTENANCE_TASKS, satellites)
-    # remove non-outage maintenance activities from the schedule and add them to another list
-    for s in satellites:
-        schedule = json.loads(s.schedule)
-        no_outage_tasks = json.loads(s.maintenance_without_outage)
-        for t in schedule:
-            if isinstance(t[0], MaintenanceTask) and not t[0].payload_outage:
-                no_outage_tasks.append(t)
-        for t in no_outage_tasks:
-            schedule.remove(t)
-        s.schedule = json.dumps(schedule)
-        s.maintenance_without_outage = json.dumps(no_outage_tasks)
+    # # remove non-outage maintenance activities from the schedule and add them to another list
+    # for s in satellites:
+    #     schedule = json.loads(s.schedule)
+    #     no_outage_tasks = json.loads(s.maintenance_without_outage)
+    #     for t in schedule:
+    #         if isinstance(t[0], MaintenanceTask) and not t[0].payload_outage:
+    #             no_outage_tasks.append(t)
+    #     for t in no_outage_tasks:
+    #         schedule.remove(t)
+    #     s.schedule = json.dumps(schedule)
+    #     s.maintenance_without_outage = json.dumps(no_outage_tasks)
 
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
     return 0

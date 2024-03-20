@@ -647,6 +647,10 @@ class TestSatelliteSchedulingAlgorithum(TestCase):
         importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
         total_scheduled_tasks = performingAlgorithumImaginTask()
         self.assertGreater(total_scheduled_tasks,0)
+        satellites = get_all_satellites()
+        for s in satellites:
+            self.assertGreater(len(s.schedule),0)
+        
         
 # class TestGroundStationSchedulingAlgorithum(TestCase):
 #     def test_import_test_cases(self):
