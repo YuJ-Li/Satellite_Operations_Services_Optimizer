@@ -133,7 +133,6 @@ def add_imageTask(name, priority, start_time, end_time, duration, image_type, im
             imagingRegionLatitude = imagingRegionLatitude,
             imagingRegionLongitude = imagingRegionLongitude,
             achievability = achievability,
-            # satellite = satellite
         )
         imagingTask.save()
     except Exception as e:
@@ -181,20 +180,20 @@ def delete_imageTask_by_id(TaskID):
         return HttpResponseBadRequest('task not found.')
     
 #MaintenanceTask controller--------------------
-def add_maintenanceTask(TaskID, revisitFrequency, priority,target,timeWindow,duration,
-                        payloadOperationAffected,schedule,startTime,endTime):
+def add_maintenanceTask(name, start_time, end_time, priority, duration, next_maintenance, is_head, min_gap, max_gap, payload_outage, satellite):
     try:
         maintenanceTask = MaintenanceTask(
-            TaskID = TaskID,
-            revisitFrequency = revisitFrequency,
-            priority = priority,
-            startTime = startTime,
-            endTime = endTime,
-            target = target,
-            timeWindow = timeWindow,
-            duration = duration,
-            payloadOperationAffected = payloadOperationAffected,
-            schedule = schedule
+            name = name, 
+            start_time = start_time, 
+            end_time = end_time, 
+            priority = priority, 
+            duration = duration, 
+            next_maintenance = next_maintenance,
+            is_head = is_head, 
+            min_gap = min_gap,
+            max_gap = max_gap, 
+            payload_outage = payload_outage, 
+            satellite = satellite, 
         )
         maintenanceTask.save()
     except Exception as e:
@@ -484,9 +483,11 @@ def delete_outage_by_id(outageId):
 
 ###############controller for satellite scheduling##########################
 
-def importTestCaseForSchedulingImagingTask(image_tasks_group):
+def importTestCaseForSchedulingImagingTask(satellites_group, image_tasks_group, maintenance_tasks_group):
     # print('--------------------HELLO STAELLITE TASKS----------------------')
-    satellites, imaging_tasks = initialize_imaging_tasks(image_tasks_group)
+    satellites = initialize_satellites(satellites_group)
+    imaging_tasks = initialize_imaging_tasks(image_tasks_group, satellites)
+    maintenance_tasks = initialize_maintenance_tasks(maintenance_tasks_group, satellites)
 
     for satellite in satellites:
         add_satellite(satelliteId=satellite.name, tle=satellite.tle, storage_capacity=satellite.storage_capacity)
@@ -497,28 +498,38 @@ def importTestCaseForSchedulingImagingTask(image_tasks_group):
                         end_time = imaging_task.end_time,
                         priority = imaging_task.priority,
                         duration = imaging_task.duration,
-                        # satellite = imaging_task.satellite,
                         image_type=imaging_task.image_type,
                         imagingRegionLatitude=imaging_task.imagingRegionLatitude,
                         imagingRegionLongitude=imaging_task.imagingRegionLongitude,
                         achievability=imaging_task.achievability,
                         )
+    print(f'!!!!converted {len(maintenance_tasks)} tasks')    
+    for maintenance_task in maintenance_tasks:
+        add_maintenanceTask(name = maintenance_task.name,
+                            start_time = maintenance_task.start_time, 
+                            end_time = maintenance_task.end_time, 
+                            priority = maintenance_task.priority, 
+                            duration = maintenance_task.duration, 
+                            next_maintenance = maintenance_task.next_maintenance, 
+                            # next_maintenance = '',
+                            is_head = maintenance_task.is_head, 
+                            min_gap = maintenance_task.min_gap, 
+                            max_gap = maintenance_task.max_gap, 
+                            payload_outage = maintenance_task.payload_outage,
+                            satellite = maintenance_task.satellite,
+                            # satellite = None
+                            )
     print('IMPORT FINISHED.')
 
 def performingAlgorithumImaginTask():
-    # satelliteId = "SOSO-1"
-    # satellite = Satellite.objects.get(satelliteId)
-    # print(satellite.schedules.all())
-
-    # satellites = Satellite.objects.all()
-
     #transfer data from DB to algorithm data
     satellites = get_all_satellites()
     print(f'Got {len(satellites)} satellites')
     set_satellites(satellites)
 
+    # add imaging tasks
     imaging_tasks = get_all_imageTask()
-    print(f'Got{len(imaging_tasks)} tasks')
+    print(f'Got {len(imaging_tasks)} imaging tasks')
     imaging_tasks_prio = group_by_priority(imaging_tasks)
 
     set_global_time("2023-10-02 00:00:00")
@@ -527,22 +538,44 @@ def performingAlgorithumImaginTask():
     for prio in imaging_tasks_prio:
         for imaging_task in imaging_tasks_prio[prio]:
             add_new_imaging_task(satellites,imaging_task)
+    total=0
+    for satellite in satellites:
+        print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.storage_capacity}------")
+        schedule = json.loads(satellite.schedule)
+        total += len(schedule)
+        for t in schedule:
+            print(f"{t[0]}         {t[1]} --> {t[2]}")
+    print(f'{total} imaging tasks got scheduled.')
 
-            total=0
-            for satellite in satellites:
-                print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.storage_capacity}------")
-                schedule = json.loads(satellite.schedule)
-                total += len(schedule)
-                for t in schedule:
-                    print(f"{t[0]}         {t[1]} --> {t[2]}")
-                    # print(t[0].name, t[1], t[2])
-                
-                maintenance_without_outage = json.loads(satellite.maintenance_without_outage)
-                print("(Maintenances without payload outage: )")
-                total += len(maintenance_without_outage)
-                for t in maintenance_without_outage:
-                    print(f"{t[0]}         {t[1]} --> {t[2]}")
-            print(f'{total} imaging tasks got scheduled.')
+    # add maintenance tasks
+    maintenance_tasks = get_all_maintenanceTask()
+    print(f'Got {len(maintenance_tasks)} maintenance tasks')
+    # maintenenace_tasks_prio = group_by_priority(maintenance_tasks)
+
+    # associate maintenance tasks with their next occurences
+    task_groups = associate_maintenance_tasks(maintenance_tasks)
+
+    set_global_time("2023-11-18 00:00:00")    
+
+    for task_group in task_groups:
+        # for maintenance_task in maintenenace_tasks_prio[prio]:
+        add_new_maintenance_task(satellites, task_group)
+        print('done')
+        total=0
+        for satellite in satellites:
+            print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.storage_capacity}------")
+            schedule = json.loads(satellite.schedule)
+            total += len(schedule)
+            for t in schedule:
+                print(f"{t[0]}         {t[1]} --> {t[2]}")
+                # print(t[0].name, t[1], t[2])
+            
+            maintenance_without_outage = json.loads(satellite.maintenance_without_outage)
+            print("(Maintenances without payload outage: )")
+            total += len(maintenance_without_outage)
+            for t in maintenance_without_outage:
+                print(f"{t[0]}         {t[1]} --> {t[2]}")
+        print(f'{total} tasks got scheduled.')
     
     return total
 

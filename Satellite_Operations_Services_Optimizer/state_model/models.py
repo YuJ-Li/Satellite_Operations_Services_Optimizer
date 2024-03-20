@@ -20,8 +20,8 @@ class Satellite(models.Model):
 
 class SatelliteTask(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_time = models.DateTimeField(null=True)
+    end_time = models.DateTimeField(null=True)
     priority = models.PositiveIntegerField()  # Assuming some integer representation
     duration = models.DurationField()
     # satellite = models.ForeignKey(Satellite, on_delete=models.DO_NOTHING, related_name='satellite_tasks')
@@ -42,17 +42,13 @@ class SatelliteTask(models.Model):
 #     schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='downlink_tasks')
 
 class MaintenanceTask(SatelliteTask):
-    next_maintenance = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, blank=True)
+    # next_maintenance = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='previous_task')
+    next_maintenance = models.CharField(max_length=100)
     is_head = models.BooleanField()
-    min_gap = models.PositiveIntegerField()
-    max_gap = models.PositiveIntegerField()
+    min_gap = models.IntegerField()
+    max_gap = models.IntegerField()
     payload_outage = models.BooleanField()
     satellite = models.ForeignKey(Satellite, on_delete=models.DO_NOTHING, related_name='maintenance_tasks')
-    # target = models.CharField(max_length=255)
-    # timeWindow = models.DateTimeField()
-    # #duration = models.DurationField()  # Expects a datetime.timedelta instance
-    # payloadOperationAffected = models.BooleanField()
-    # schedule = models.ForeignKey(SatelliteSchedule, on_delete=models.CASCADE, related_name='maintenance_tasks')
 
 class GroundStation(models.Model):
     groundStationId = models.CharField(max_length=50, unique=True)

@@ -636,24 +636,16 @@ from django.db import IntegrityError
 class TestSatelliteSchedulingAlgorithum(TestCase):
     
     def test_import_test_cases(self):
-        importTestCaseForSchedulingImagingTask("/app/order_samples/group2")
+        importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
 
         ss = get_all_satellites()
         self.assertEqual(len(ss),5)
         self.assertEqual(len(get_all_imageTask()),135) # group2 contains 135 imaging tasks including revisits
-
+        self.assertEqual(len(get_all_maintenanceTask()),87)
 
     def test_transferDataToAlgorithum(self):
-        importTestCaseForSchedulingImagingTask("/app/order_samples/group4_newest")
+        importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
         total_scheduled_tasks = performingAlgorithumImaginTask()
-        # print("all satellites: #############")
-        # print(get_all_imagingTask()[0].TaskID)
-        # print(get_all_imagingTask()[0].schedule.satellite.satelliteId)
-        # print(get_all_imagingTask()[1].TaskID)
-        # print(get_all_imagingTask()[1].schedule.satellite.satelliteId)
-        # print(get_all_imagingTask()[2].TaskID)
-        # print(get_all_imagingTask()[2].schedule.satellite.satelliteId)
-        #print(get_all_satellites()[0].satelliteSchedule.imaging_tasks.get(TaskID = "ImagingTask10").TaskID)
         self.assertGreater(total_scheduled_tasks,0)
         
 # class TestGroundStationSchedulingAlgorithum(TestCase):
