@@ -20,7 +20,7 @@
   }
   
   .addForm label {
-    margin-bottom: 20px;
+    margin-bottom: 5px;
     color: #333;
     font-size: 18px;
   }
@@ -28,7 +28,7 @@
   .addForm label input {
     width: 100%;
     padding: 10px;
-    margin-top: 5px;
+    margin-top: 1%;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
