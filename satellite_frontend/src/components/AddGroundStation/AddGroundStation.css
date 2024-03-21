@@ -1,0 +1,51 @@
+.addContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .addForm {
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.9); /* Semi-transparent background for the form */
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px; /* Adjust width as needed */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .addForm label {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+  }
+  
+  .addForm label input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  .addForm button {
+    padding: 12px;
+    background-color: #007bff; /* A green color for the submit button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s;
+  }
+  
+  .addForm button:hover {
+    background-color: #218838; /* A darker green for the hover effect */
+  }
+  

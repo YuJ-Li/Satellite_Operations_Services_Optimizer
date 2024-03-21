@@ -26,6 +26,17 @@ function HomePage() {
     navigate('/add-satellite');
   };
 
+  const navigateToGroundStation = () => {
+    navigate('/add-groundstation');
+  };
+
+  const navigateToOutage = () => {
+    navigate('/add-outage');
+  };
+
+  const navigateToTask = () => {
+    navigate('/add-task');
+  };
   return (
     <div style={homePageStyle}>
       <div className="content">
@@ -33,9 +44,9 @@ function HomePage() {
         <div className="buttonGroup">
           <button onClick={navigateToViewData}>View Data</button>
           <button onClick={navigateToAddSatellite}>Add Satellite</button>
-          <button>Add Ground Station</button>
-          <button>Add Outage</button>
-          <button>Add Tasks</button>
+          <button onClick={navigateToGroundStation}>Add Ground Station</button>
+          <button onClick={navigateToOutage}>Add Outage</button>
+          <button onClick={navigateToTask}>Add Tasks</button>
         </div>
       </div>
     </div>
