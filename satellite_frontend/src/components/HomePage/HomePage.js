@@ -22,13 +22,17 @@ function HomePage() {
     navigate('/view-data');
   };
 
+  const navigateToAddSatellite = () => {
+    navigate('/add-satellite');
+  };
+
   return (
     <div style={homePageStyle}>
       <div className="content">
         <h1>Welcome to the Satellite Optimization Tool</h1>
         <div className="buttonGroup">
           <button onClick={navigateToViewData}>View Data</button>
-          <button>Add Satellite</button>
+          <button onClick={navigateToAddSatellite}>Add Satellite</button>
           <button>Add Ground Station</button>
           <button>Add Outage</button>
           <button>Add Tasks</button>
