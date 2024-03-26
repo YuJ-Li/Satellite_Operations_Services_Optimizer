@@ -1,0 +1,15 @@
+{
+   "Latitude": -81.7279675062221,
+   "Longitude": -5.820247484892292,
+   "Priority": 2,
+   "ImageType": "Medium",
+   "ImageStartTime": "2023-10-02T19:49:06",
+   "ImageEndTime": "2023-10-02T22:40:54",
+   "DeliveryTime": "2023-10-03T02:40:54",
+   "Recurrence": {
+      "Revisit": "True",
+      "NumberOfRevisits": 3,
+      "RevisitFrequency": 12,
+      "RevisitFrequencyUnits": "Hours"
+   }
+}
