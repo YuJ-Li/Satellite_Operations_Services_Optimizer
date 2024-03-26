@@ -666,7 +666,8 @@ def convert_json_to_imaging_task(task_json, name, satellites):
     # TODO: CREATE A UNIQUE ID FOR EACH TASK  
     # name = "ImagingTask" + str(random.randint(0, 10000)) 
       
-    data = json.load(task_json)
+    # data = json.load(task_json)
+    data = task_json
     priority = data["Priority"]
     start_time = convert_str_to_datetime(data["ImageStartTime"])
     end_time = convert_str_to_datetime(data["ImageEndTime"])
@@ -733,7 +734,7 @@ def add_new_maintenance_task(satellites, task_group):
     return 0
 
 def convert_json_to_maintenance_task(task_json, name, satellites):
-    data = json.load(task_json)
+    data = task_json
     # for simplicity, we only consider the window (start and end time) and duration 
     target = get_satellite_by_name(satellites, data["Target"])
     start_time = convert_str_to_datetime(data["Window"]["Start"])

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AddSatellite.css'; // Importing the CSS file for styling
 import backgroundImage from '../../assets/background.jpg';  // Adjust the path as necessary
+import axios from 'axios'
 
 function AddSatellite() {
   const [satellite, setSatellite] = useState({
@@ -19,18 +20,24 @@ function AddSatellite() {
     setSatellite({ ...satellite, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('Satellite to add:', satellite);
-    // Add logic to send data to backend
-    navigate('/'); // Navigate after submission
+    try {
+      const response = await axios.post('http://localhost:8000/satellites/', satellite);
+      console.log('Server response:', response);
+      navigate('/'); // Navigate after submission
+    }
+    catch (error) {
+      console.error('Error posting data:', error);
+    }
   };
 
   return (
     <div className="addSatelliteContainer" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <form onSubmit={handleSubmit} className="addSatelliteForm">
         <label>
-          Name:
+          Satellite Name:
           <input type="text" name="name" value={satellite.name} onChange={handleChange} required />
         </label>
         {/* Repeat for other fields */}
@@ -41,10 +48,6 @@ function AddSatellite() {
         <label>
           Storage Capacity (KB):
           <input type="number" name="storage_capacity" value={satellite.storage_capacity} onChange={handleChange} required />
-        </label>
-        <label>
-          Capacity Used (kWh):
-          <input type="number" name="capacity_used" value={satellite.capacity_used} onChange={handleChange} required />
         </label>
         <button type="submit">Add Satellite</button>
       </form>

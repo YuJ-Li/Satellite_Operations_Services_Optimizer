@@ -12,6 +12,8 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from .scheduling_algorithm import convert_json_to_maintenance_task, convert_json_to_imaging_task
+from .repositories import get_all_satellites, add_maintenanceTask, add_imageTask
 
 #test restAPI-----------------------------------------
 @api_view(['GET'])
@@ -108,21 +110,42 @@ def satellite_schedule_detail(request, schedule_id):
 @api_view(['GET', 'POST'])
 def imaging_task_list(request):
     if request.method == 'GET':
-        tasks = ImagingTask.objects.all()
-        serializer = ImagingTaskSerializer(tasks, many=True)
+        tasks = ImageTask.objects.all()
+        serializer = ImageTaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
+        # schedule_id = request.data.get('schedule')
+        # if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
+        #     return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
 
-        schedule_id = request.data.get('schedule')
-        if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
-            return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
+        # serializer = ImagingTaskSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = ImagingTaskSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # GET ALL SATELLITES
+        satellites = get_all_satellites()
+
+        # PARSE MAINTENANCE TASKS
+        data = request.data
+        json_content = json.loads(data['jsonData'])
+        name = data['name']
+        imaging_tasks = convert_json_to_imaging_task(json_content, name, satellites)
+
+        for imaging_task in imaging_tasks:
+            add_imageTask(name = imaging_task.name,
+                        start_time = imaging_task.start_time,
+                        end_time = imaging_task.end_time,
+                        priority = imaging_task.priority,
+                        duration = imaging_task.duration,
+                        image_type=imaging_task.image_type,
+                        imagingRegionLatitude=imaging_task.imagingRegionLatitude,
+                        imagingRegionLongitude=imaging_task.imagingRegionLongitude,
+                        achievability=imaging_task.achievability,
+                        )
+        print("IMPORT SUCCESS")
     
 @api_view(['GET', 'PUT', 'DELETE'])
 def imaging_task_detail(request, task_id):
@@ -208,15 +231,40 @@ def maintenance_task_list(request):
 
     elif request.method == 'POST':
 
-        schedule_id = request.data.get('schedule')
-        if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
-            return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
+        # schedule_id = request.data.get('schedule')
+        # if not SatelliteSchedule.objects.filter(id=schedule_id).exists():
+        #     return JsonResponse({'error': 'SatelliteSchedule not found'}, status=400)
+        
+        # GET ALL SATELLITES
+        satellites = get_all_satellites()
 
-        serializer = MaintenanceTaskSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # PARSE MAINTENANCE TASKS
+        data = request.data
+        json_content = json.loads(data['jsonData'])
+        name = data['name']
+        maintenance_tasks = convert_json_to_maintenance_task(json_content, name, satellites)
+
+        for maintenance_task in maintenance_tasks:
+            add_maintenanceTask(name = maintenance_task.name,
+                                start_time = maintenance_task.start_time, 
+                                end_time = maintenance_task.end_time, 
+                                priority = maintenance_task.priority, 
+                                duration = maintenance_task.duration, 
+                                next_maintenance = maintenance_task.next_maintenance, 
+                                # next_maintenance = '',
+                                is_head = maintenance_task.is_head, 
+                                min_gap = maintenance_task.min_gap, 
+                                max_gap = maintenance_task.max_gap, 
+                                payload_outage = maintenance_task.payload_outage,
+                                satellite = maintenance_task.satellite,
+                                # satellite = None
+                                )
+        print("IMPORT SUCCESS")
+            # serializer = MaintenanceTaskSerializer(data=request.data)
+            # if serializer.is_valid():
+            #     serializer.save()
+            #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET', 'PUT', 'DELETE'])
 def maintenance_task_detail(request, task_id):

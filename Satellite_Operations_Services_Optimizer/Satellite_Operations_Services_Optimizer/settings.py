@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Satellite_Operations_Services_Optimizer.urls'
@@ -71,6 +73,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Satellite_Operations_Services_Optimizer.wsgi.application'
 
+CORS_ORIGIN_ALLOW_ALL = True  # Allow requests from any origin (not recommended for production)
+# or
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',  # Add your frontend domain here
+]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
