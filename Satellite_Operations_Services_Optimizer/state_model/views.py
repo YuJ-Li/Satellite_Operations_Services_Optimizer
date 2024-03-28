@@ -33,17 +33,16 @@ def getGlobalTime(request):
     set_satellites(satellites)
 
     # maintenance tasks
+    imaging_tasks = get_all_imageTask()
+    print(f'Got {len(imaging_tasks)} imaging tasks')
     maintenance_tasks = get_all_maintenanceTask()
     print(f'Got {len(maintenance_tasks)} maintenance tasks')
     task_groups = associate_maintenance_tasks(maintenance_tasks)
-
+    all_tasks = list(maintenance_tasks) + list(imaging_tasks)
     for task_group in task_groups:
-        add_new_maintenance_task(satellites, task_group)
+        add_new_maintenance_task(satellites, task_group, all_tasks)
 
     # imaging tasks
-    imaging_tasks = get_all_imageTask()
-    print('TASKS FROM DB: ')
-    print(f'Got {len(imaging_tasks)} imaging tasks')
     imaging_tasks_prio = group_by_priority(imaging_tasks)
     add_new_imaging_task(satellites,imaging_tasks_prio,imaging_tasks)
     # for prio in imaging_tasks_prio:
@@ -203,7 +202,6 @@ def maintenance_task_list(request):
         json_content = json.loads(data['jsonData'])
         name = data['name']
         maintenance_tasks = convert_json_to_maintenance_task(json_content, name, satellites)
-
         for maintenance_task in maintenance_tasks:
             try:
                 add_maintenanceTask(name = maintenance_task.name,
@@ -220,16 +218,16 @@ def maintenance_task_list(request):
                                 satellite = maintenance_task.satellite,
                                 # satellite = None
                                 )
-                return Response(status=status.HTTP_201_CREATED)
+                print('LENGTH IS : ', len(get_all_maintenanceTask()))        
             except Exception as e:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(status=status.HTTP_201_CREATED)
             
     
 @api_view(['GET', 'PUT', 'DELETE'])
 def maintenance_task_detail(request, task_id):
     try:
-        task = MaintenanceTask.objects.get(TaskID=task_id)
+        task = MaintenanceTask.objects.get(name=task_id)
 
         # For GET requests
         if request.method == 'GET':

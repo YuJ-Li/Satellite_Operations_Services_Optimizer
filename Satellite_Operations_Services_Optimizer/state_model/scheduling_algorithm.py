@@ -574,7 +574,7 @@ def update_imaging_pool(all_tasks):
 '''
 Put all unexecuted maintenence and imaging tasks back into the pool for future reschedule
 '''
-def update_maintenenace_and_imaging_pool():
+def update_maintenenace_and_imaging_pool(all_tasks):
     global ACCUMULATED_IMAGING_TASKS
     global ACCUMULATED_MAINTENANCE_TASKS
     global MAINTENANCE_TASK_HISTORY
@@ -586,24 +586,28 @@ def update_maintenenace_and_imaging_pool():
         tasks_to_remove = []
         schedule = json.loads(s.schedule)
         for t in schedule:
-            if isinstance(t[0], ImageTask):
-                process_image_task(tasks_to_remove, t)
-            elif isinstance(t[0], MaintenanceTask): # if the maintenance task has not been executed (hasn's started) yet
-                process_maintenance_task(tasks_to_remove, t)
+            task = get_task_by_name_from_specific_list(t[0],all_tasks)
+            if isinstance(task, ImageTask):
+                process_image_task(tasks_to_remove, t, all_tasks)
+            elif isinstance(task, MaintenanceTask): # if the maintenance task has not been executed (hasn's started) yet
+                process_maintenance_task(tasks_to_remove, t, all_tasks)
 
         for task in tasks_to_remove:
-            schedule.remove(task)
-            s.capacity_used -= get_image_type(task.image_type)['size']
+            for r in schedule:
+                if r[0] == task.name:
+                    schedule.remove(task)
+                    if isinstance(task, ImageTask):
+                        s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
 
-        tasks_to_remove = []
-        no_outage_tasks = json.loads(s.maintenance_without_outage)
-        for t in no_outage_tasks:
-            process_maintenance_task(tasks_to_remove, t)
-        for task in tasks_to_remove:
-            no_outage_tasks.remove(task)
-            s.capacity_used -= get_image_type(task.image_type)['size']
-        s.maintenance_without_outage = json.dumps(no_outage_tasks)
+        # tasks_to_remove = []
+        # no_outage_tasks = json.loads(s.maintenance_without_outage)
+        # for t in no_outage_tasks:
+        #     process_maintenance_task(tasks_to_remove, t)
+        # for task in tasks_to_remove:
+        #     no_outage_tasks.remove(task)
+        #     s.capacity_used -= get_image_type(task.image_type)['size']
+        # s.maintenance_without_outage = json.dumps(no_outage_tasks)
 
     # sort task list by priority
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
@@ -625,25 +629,29 @@ def process_image_task(tasks_to_remove, t, all_tasks):
         IMAGING_TASK_HISTORY.append(t)
 
 
-def process_maintenance_task(tasks_to_remove, t):
+def process_maintenance_task(tasks_to_remove, t, all_tasks):
     global GLOBAL_TIME
     global ACCUMULATED_MAINTENANCE_TASKS
     global MAINTENANCE_TASK_HISTORY
 
-    if t[1] > GLOBAL_TIME: # if the task has not been executed yet
+    actual_start_time = convert_str_to_datetime(t[1])
+    actual_end_time = convert_str_to_datetime(t[2])
+    t = get_task_by_name_from_specific_list(t[0],all_tasks)
+
+    if actual_start_time > GLOBAL_TIME: # if the task has not been executed yet
         tasks_to_remove.append(t)
-        if t[0].is_head:
-            add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0]) # add it to the reschedule list
-    elif t[1] <= GLOBAL_TIME and t[2] > GLOBAL_TIME: # if the task is being executed
-        if t[0].is_head:
-            t[0].is_head = False
-            get_task_by_name(t[0].next_maintenance).is_head = True # assign its next occurence to be the head
-    elif t[2] <= GLOBAL_TIME: # if the task is completed
+        # if t[0].is_head:
+        #     add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,t[0]) # add it to the reschedule list
+    elif actual_start_time <= GLOBAL_TIME and actual_end_time > GLOBAL_TIME: # if the task is being executed
+        if t.is_head:
+            t.is_head = False
+            get_task_by_name(t.next_maintenance).is_head = True # assign its next occurence to be the head
+    elif actual_end_time <= GLOBAL_TIME: # if the task is completed
         tasks_to_remove.append(t)
         MAINTENANCE_TASK_HISTORY.append(t)
-        if t[0].is_head:
-            t[0].is_head = False
-            get_task_by_name(t[0].next_maintenance).is_head = True # assign its next occurence to be the head
+        if t.is_head:
+            t.is_head = False
+            get_task_by_name(t.next_maintenance).is_head = True # assign its next occurence to be the head
 
 
 
@@ -679,7 +687,7 @@ def convert_json_to_imaging_task(task_json, name, satellites):
 
     # TODO: CREATE A UNIQUE ID FOR EACH TASK  
     # name = "ImagingTask" + str(random.randint(0, 10000)) 
-      
+    
     # data = json.load(task_json)
     data = task_json
     priority = data["Priority"]
@@ -705,18 +713,18 @@ def convert_json_to_imaging_task(task_json, name, satellites):
         task_list += tasks
     return task_list
 
-def add_new_maintenance_task(satellites, task_group):
+def add_new_maintenance_task(satellites, task_group, all_tasks):
     global IMAGING_TASK_HISTORY
     global MAINTENANCE_TASK_HISTORY
     global ACCUMULATED_IMAGING_TASKS
     global ACCUMULATED_MAINTENANCE_TASKS
     # global SATELLITES
     global GLOBAL_TIME
-    
+    print('1 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     # clear expired tasks from the task lists
     clear_expired_tasks(ACCUMULATED_IMAGING_TASKS)
     clear_expired_tasks(ACCUMULATED_MAINTENANCE_TASKS)
-    
+    print('2 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     # determine if the task has passed the current time, if yes, return false
     for task in task_group:
         # while task:
@@ -726,10 +734,10 @@ def add_new_maintenance_task(satellites, task_group):
             # break # only add the first executable task into the list (the repetition will be added once this task has been scheduled)
         # task = get_task_by_name(task.next_maintenance)
         ACCUMULATED_MAINTENANCE_TASKS = dict(sorted(ACCUMULATED_MAINTENANCE_TASKS.items(), key=lambda item: item[0], reverse=True))
-    
+    print('3 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     # clear tasks that has been finished and that is being executed at current time
-    update_maintenenace_and_imaging_pool()
-           
+    update_maintenenace_and_imaging_pool(all_tasks)
+    print('4 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)  
     # do EDF
     ACCUMULATED_MAINTENANCE_TASKS = edf_maintenance(ACCUMULATED_MAINTENANCE_TASKS, satellites)
     # # remove non-outage maintenance activities from the schedule and add them to another list
@@ -743,8 +751,9 @@ def add_new_maintenance_task(satellites, task_group):
     #         schedule.remove(t)
     #     s.schedule = json.dumps(schedule)
     #     s.maintenance_without_outage = json.dumps(no_outage_tasks)
-
+    print('5 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
+    print('6 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     return 0
 
 def convert_json_to_maintenance_task(task_json, name, satellites):
