@@ -218,7 +218,6 @@ def maintenance_task_list(request):
                                 satellite = maintenance_task.satellite,
                                 # satellite = None
                                 )
-                print('LENGTH IS : ', len(get_all_maintenanceTask()))        
             except Exception as e:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_201_CREATED)

@@ -176,11 +176,13 @@ def edf_maintenance(priority_list, satellites):
                 scheduled, scheduled_start = schedule_maintenance_task(task, satellite)
                 if not scheduled:
                     add_task_to_priority_list(unscheduled_tasks, task)
-                    # print(f'Failed to schedule {task.name}.')
+                    print(f'FAILED TO SCHEDULE {task.name} : {task.is_head}.')
                 else:
                     # schedule the next revisit activity
                     while scheduled and len(task.next_maintenance)>0:
                         next_task = get_task_by_name_from_specific_list(task.next_maintenance, tasks)
+                        print(f'LOOKING AT {next_task}')
+                        print(f'Scheduled start {scheduled_start}, timedelta {dt.timedelta(seconds=int(task.min_gap))}')
                         next_task.start_time = scheduled_start + dt.timedelta(seconds=int(task.min_gap))
                         next_task.end_time = scheduled_start + dt.timedelta(seconds=int(task.max_gap)) + next_task.duration
                         scheduled, scheduled_start = schedule_maintenance_task(next_task, satellite)
@@ -190,6 +192,7 @@ def edf_maintenance(priority_list, satellites):
     return unscheduled_tasks
 
 def schedule_maintenance_task(task, satellite):
+    print(f'###### TASK {task.name} starts at {task.start_time} ends at {task.end_time}')
     scheduled = False
     scheduled_start = None
     schedule_ptr = -1
@@ -197,7 +200,7 @@ def schedule_maintenance_task(task, satellite):
     while not scheduled and schedule_ptr<len(satellite_schedule):
         empty_slot_start, empty_slot_end, schedule_ptr = find_next_slot(satellite, schedule_ptr)
         if empty_slot_start is not None and empty_slot_end is not None:
-            if task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
+            if task.start_time and task.start_time < empty_slot_start and empty_slot_start + task.duration <= empty_slot_end and empty_slot_start + task.duration <= task.end_time:
                 scheduled_start = empty_slot_start
                 scheduled_end = scheduled_start + task.duration
                 satellite_schedule.insert(schedule_ptr, (task.name, convert_datetime_to_str(scheduled_start), convert_datetime_to_str(scheduled_end))) 
@@ -205,7 +208,7 @@ def schedule_maintenance_task(task, satellite):
                 satellite.schedule = json.dumps(satellite_schedule)
                 # print(f'{task.name} is scheduled on {satellite.name}.')
                 break
-            elif task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
+            elif task.start_time and task.start_time >= empty_slot_start and task.start_time + task.duration <= empty_slot_end and task.start_time + task.duration <= task.end_time:
                 scheduled_start = task.start_time
                 scheduled_end = scheduled_start + task.duration
                 satellite_schedule.insert(schedule_ptr, (task.name, convert_datetime_to_str(scheduled_start), convert_datetime_to_str(scheduled_end))) 
@@ -521,10 +524,8 @@ def add_new_imaging_task(satellites,imaging_tasks_prio,all_tasks):
     global GLOBAL_TIME
 
     ACCUMULATED_IMAGING_TASKS = imaging_tasks_prio
-    print('1 BEFORE: ', ACCUMULATED_IMAGING_TASKS, type(ACCUMULATED_IMAGING_TASKS))
     # clear expired tasks from the task lists
     clear_expired_tasks(ACCUMULATED_IMAGING_TASKS)
-    print('2 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
     # determine if the new tasks are potentially achievable according to the current time, if yes, add the new tasks to the pool 
     # for task in tasks:
     # if task.end_time - task.duration > GLOBAL_TIME: # if the lastest start time is later than current time
@@ -536,13 +537,10 @@ def add_new_imaging_task(satellites,imaging_tasks_prio,all_tasks):
     #         ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
 
     # clear tasks that has been finished and that is being executed at current time
-    print('3 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
     update_imaging_pool(all_tasks)
         
     # do EDF
-    print('4 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
-    print('AFTER: ',ACCUMULATED_IMAGING_TASKS)
 
     return 0
 
@@ -553,22 +551,18 @@ def update_imaging_pool(all_tasks):
     global ACCUMULATED_IMAGING_TASKS
     global SATELLITES
     global GLOBAL_TIME
-    print('enter function')
     for s in SATELLITES:
         schedule = json.loads(s.schedule)
-        print(F'EXAMINING SCHEDULE OF {s.name}: {schedule}')
         tasks_to_remove = []
         for t in schedule:
             if isinstance(get_task_by_name_from_specific_list(t[0],all_tasks), ImageTask): # if the imaging task has not been executed (hasn's started) yet
                 process_image_task(tasks_to_remove, t, all_tasks)
-        print(f'TASKS TO REMOVE: {tasks_to_remove}')
         for task in tasks_to_remove:
             for r in schedule:
                 if r[0] == task.name:
                     schedule.remove(r) 
                     s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
-        print(F'THEN SCHEDULE BECOME {s.name}: {s.schedule}')
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
 '''
@@ -595,7 +589,7 @@ def update_maintenenace_and_imaging_pool(all_tasks):
         for task in tasks_to_remove:
             for r in schedule:
                 if r[0] == task.name:
-                    schedule.remove(task)
+                    schedule.remove(r)
                     if isinstance(task, ImageTask):
                         s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
@@ -645,7 +639,11 @@ def process_maintenance_task(tasks_to_remove, t, all_tasks):
     elif actual_start_time <= GLOBAL_TIME and actual_end_time > GLOBAL_TIME: # if the task is being executed
         if t.is_head:
             t.is_head = False
-            get_task_by_name(t.next_maintenance).is_head = True # assign its next occurence to be the head
+            next_t = get_task_by_name_from_specific_list(t.next_maintenance, all_tasks)
+            print(t.name,t.next_maintenance)
+            next_t.is_head = True # assign its next occurence to be the head
+            next_t.start_time = actual_start_time + dt.timedelta(seconds=int(t.min_gap))
+            next_t.end_time = actual_end_time + dt.timedelta(seconds=int(t.max_gap)) + next_t.duration
     elif actual_end_time <= GLOBAL_TIME: # if the task is completed
         tasks_to_remove.append(t)
         MAINTENANCE_TASK_HISTORY.append(t)
@@ -663,7 +661,7 @@ def clear_expired_tasks(task_list):
         tasks = p_group[1]
         expired_tasks = []
         for task in tasks:
-            if task.end_time - task.duration < GLOBAL_TIME: # if we have passed the lastest possible start time of the task
+            if task.end_time and task.end_time - task.duration < GLOBAL_TIME: # if we have passed the lastest possible start time of the task
                 expired_tasks.append(task)
                 if isinstance(task, ImageTask):
                     IMAGING_TASK_HISTORY.append(task)
@@ -726,14 +724,15 @@ def add_new_maintenance_task(satellites, task_group, all_tasks):
     clear_expired_tasks(ACCUMULATED_MAINTENANCE_TASKS)
     print('2 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     # determine if the task has passed the current time, if yes, return false
+
     for task in task_group:
         # while task:
         if not task.end_time or task.end_time - task.duration > GLOBAL_TIME: # if the task hasn't been assigned an end time yet OR the lastest start time is later than current time
             # then this task is potentially feasible, add it to the list
             add_task_to_priority_list(ACCUMULATED_MAINTENANCE_TASKS,task)
-            # break # only add the first executable task into the list (the repetition will be added once this task has been scheduled)
-        # task = get_task_by_name(task.next_maintenance)
-        ACCUMULATED_MAINTENANCE_TASKS = dict(sorted(ACCUMULATED_MAINTENANCE_TASKS.items(), key=lambda item: item[0], reverse=True))
+        
+    ACCUMULATED_MAINTENANCE_TASKS = dict(sorted(ACCUMULATED_MAINTENANCE_TASKS.items(), key=lambda item: item[0], reverse=True))
+    
     print('3 AAAAA: ',ACCUMULATED_MAINTENANCE_TASKS)
     # clear tasks that has been finished and that is being executed at current time
     update_maintenenace_and_imaging_pool(all_tasks)
