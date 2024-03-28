@@ -47,7 +47,7 @@ function AddTask() {
       }
     }
     reader.readAsText(file)
-  }
+  };
 
 
   const handleChange = (e) => {
@@ -95,7 +95,6 @@ function AddTask() {
         <label>
           Upload Json File:
           <input type = "file" accept=".json" onChange={handleFileChange} />
-
         </label>
         
         <button type="submit">Add Task</button>

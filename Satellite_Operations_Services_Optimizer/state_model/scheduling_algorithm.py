@@ -14,7 +14,7 @@ from .models import Satellite, ImageTask, MaintenanceTask, GroundStation, Ground
 
 # # satellite constants
 SATELLITE_FULL_VIEW_ANGLE = 60
-STORAGE_CAPACITY = 32.0 * 1024.0 # GB
+STORAGE_CAPACITY = 32.0 * 1024.0 # 32GB
 # Image types constants
 HIGH_WRITING_TIME = 120
 HIGH_SIZE = 512 # MB
@@ -363,7 +363,8 @@ def find_satellite_achievability_of_point(satellite, imaging_task, latitude, lon
     '''Given a satellite, an imaging task, and the coordinates of a point on the Earth, 
     output the timeslots between the start time and end time of the task when this point is in the field of view of the satellite.'''
     point_on_earth = Topos(latitude_degrees=latitude, longitude_degrees=longitude, elevation_m=0)
-    defined_satellite = EarthSatellite(satellite.tle[0], satellite.tle[1], satellite.name)
+    lines = (satellite.tle).split('\n')
+    defined_satellite = EarthSatellite(lines[0], lines[1], satellite.name)
     ts = load.timescale()
     st = ts.utc(imaging_task.start_time.year, imaging_task.start_time.month, imaging_task.start_time.day, imaging_task.start_time.hour, imaging_task.start_time.minute, imaging_task.start_time.second)
     et = ts.utc(imaging_task.end_time.year, imaging_task.end_time.month, imaging_task.end_time.day, imaging_task.end_time.hour, imaging_task.end_time.minute, imaging_task.end_time.second)
@@ -514,49 +515,60 @@ def get_global_time():
 
 
 # Trigger of adding new task
-def add_new_imaging_task(satellites,task):
+def add_new_imaging_task(satellites,imaging_tasks_prio,all_tasks):
     global ACCUMULATED_IMAGING_TASKS
     # global SATELLITES
     global GLOBAL_TIME
 
+    ACCUMULATED_IMAGING_TASKS = imaging_tasks_prio
+    print('1 BEFORE: ', ACCUMULATED_IMAGING_TASKS, type(ACCUMULATED_IMAGING_TASKS))
     # clear expired tasks from the task lists
     clear_expired_tasks(ACCUMULATED_IMAGING_TASKS)
-
+    print('2 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
     # determine if the new tasks are potentially achievable according to the current time, if yes, add the new tasks to the pool 
     # for task in tasks:
-    if task.end_time - task.duration > GLOBAL_TIME: # if the lastest start time is later than current time
-        # then this task is potentially feasible, add it to the list
-        if ACCUMULATED_IMAGING_TASKS.get(task.priority) is None:
-            ACCUMULATED_IMAGING_TASKS[task.priority] = [task]
-            ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
-        else:
-            ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
-    
+    # if task.end_time - task.duration > GLOBAL_TIME: # if the lastest start time is later than current time
+    #     # then this task is potentially feasible, add it to the list
+    #     if ACCUMULATED_IMAGING_TASKS.get(task.priority) is None:
+    #         ACCUMULATED_IMAGING_TASKS[task.priority] = [task]
+    #         ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
+    #     else:
+    #         ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
+
     # clear tasks that has been finished and that is being executed at current time
-    update_imaging_pool()
+    print('3 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
+    update_imaging_pool(all_tasks)
         
     # do EDF
+    print('4 BEFORE: ', ACCUMULATED_IMAGING_TASKS)
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
-    
+    print('AFTER: ',ACCUMULATED_IMAGING_TASKS)
+
     return 0
 
 '''
 Put all unexecuted imaging tasks back into the pool for future reschedule
 '''
-def update_imaging_pool():
+def update_imaging_pool(all_tasks):
     global ACCUMULATED_IMAGING_TASKS
     global SATELLITES
     global GLOBAL_TIME
+    print('enter function')
     for s in SATELLITES:
         schedule = json.loads(s.schedule)
+        print(F'EXAMINING SCHEDULE OF {s.name}: {schedule}')
         tasks_to_remove = []
         for t in schedule:
-            if isinstance(t[0], ImageTask): # if the imaging task has not been executed (hasn's started) yet
-                process_image_task(tasks_to_remove, t)
+            if isinstance(get_task_by_name_from_specific_list(t[0],all_tasks), ImageTask): # if the imaging task has not been executed (hasn's started) yet
+                process_image_task(tasks_to_remove, t, all_tasks)
+        print(f'TASKS TO REMOVE: {tasks_to_remove}')
         for task in tasks_to_remove:
-            schedule.remove(task) 
-            s.capacity_used -= get_image_type(task.image_type)['size']
+            for r in schedule:
+                if r[0] == task.name:
+                    schedule.remove(r) 
+                    s.capacity_used -= get_image_type(task.image_type)['size']
         s.schedule = json.dumps(schedule)
+        print(F'THEN SCHEDULE BECOME {s.name}: {s.schedule}')
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
 
 '''
@@ -597,16 +609,18 @@ def update_maintenenace_and_imaging_pool():
     ACCUMULATED_IMAGING_TASKS = dict(sorted(ACCUMULATED_IMAGING_TASKS.items(), key=lambda item: item[0], reverse=True))
     ACCUMULATED_MAINTENANCE_TASKS = dict(sorted(ACCUMULATED_MAINTENANCE_TASKS.items(), key=lambda item: item[0], reverse=True))
 
-def process_image_task(tasks_to_remove, t):
+def process_image_task(tasks_to_remove, t, all_tasks):
     global ACCUMULATED_IMAGING_TASKS
     global IMAGING_TASK_HISTORY
     global GLOBAL_TIME
-
-    if t[1] > GLOBAL_TIME: # if the imaging task has not been executed (hasn's started) yet
-        add_task_to_priority_list(ACCUMULATED_IMAGING_TASKS,t[0])
+    actual_start_time = convert_str_to_datetime(t[1])
+    actual_end_time = convert_str_to_datetime(t[2])
+    t = get_task_by_name_from_specific_list(t[0],all_tasks)
+    if actual_start_time > GLOBAL_TIME: # if the imaging task has not been executed (hasn's started) yet
+        # add_task_to_priority_list(ACCUMULATED_IMAGING_TASKS,t)
         tasks_to_remove.append(t)
-        t[0].satellite = None
-    elif t[2] < GLOBAL_TIME:
+        # t[0].satellite = None
+    elif actual_end_time < GLOBAL_TIME:
         tasks_to_remove.append(t)
         IMAGING_TASK_HISTORY.append(t)
 

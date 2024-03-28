@@ -11,7 +11,7 @@ function AddSatellite() {
     schedule: '[]',
     tle: '',
     storage_capacity: '',
-    capacity_used: '',
+    capacity_used: 0.0,
   });
 
   const navigate = useNavigate();
@@ -33,6 +33,23 @@ function AddSatellite() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const fileContent = event.target.result;
+      try {
+        // const parsedJson = JSON.parse(fileContent)
+        // setSatellite({ ...satellite, tle: JSON.stringify(parsedJson) })
+        setSatellite({ ...satellite, tle: fileContent });
+      } catch (error) {
+        console.error('Error parsing TXT:', error);
+      };
+    }
+    reader.readAsText(file);
+  };
+
   return (
     <div className="addSatelliteContainer" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <form onSubmit={handleSubmit} className="addSatelliteForm">
@@ -40,14 +57,13 @@ function AddSatellite() {
           Satellite Name:
           <input type="text" name="name" value={satellite.name} onChange={handleChange} required />
         </label>
-        {/* Repeat for other fields */}
         <label>
-          TLE:
-          <input type="text" name="tle" value={satellite.tle} onChange={handleChange} required />
+          Storage Capacity (MB):
+          <input type="number" name="storage_capacity" value={satellite.storage_capacity} onChange={handleChange} required />
         </label>
         <label>
-          Storage Capacity (KB):
-          <input type="number" name="storage_capacity" value={satellite.storage_capacity} onChange={handleChange} required />
+          TLE:
+          <input type="file" accept=".txt" onChange={handleFileChange} required />
         </label>
         <button type="submit">Add Satellite</button>
       </form>

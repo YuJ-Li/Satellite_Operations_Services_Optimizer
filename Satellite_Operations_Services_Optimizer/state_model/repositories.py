@@ -24,6 +24,7 @@ def add_satellite(satelliteId, tle, storage_capacity):
                                   capacity_used = 0.0
                                   )
         new_satellite.save()
+        return new_satellite
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
