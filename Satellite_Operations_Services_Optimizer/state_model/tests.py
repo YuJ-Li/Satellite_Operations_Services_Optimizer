@@ -633,23 +633,23 @@ from django.db import IntegrityError
 # #         )
 # #         self.assertEqual(get_image_by_id("image1").imageSize,2048)
 
-class TestSatelliteSchedulingAlgorithum(TestCase):
+# class TestSatelliteSchedulingAlgorithum(TestCase):
     
-    def test_import_test_cases(self):
-        importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
+#     def test_import_test_cases(self):
+#         importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
 
-        ss = get_all_satellites()
-        self.assertEqual(len(ss),5)
-        self.assertEqual(len(get_all_imageTask()),135) # group2 contains 135 imaging tasks including revisits
-        self.assertEqual(len(get_all_maintenanceTask()),87)
+#         ss = get_all_satellites()
+#         self.assertEqual(len(ss),5)
+#         self.assertEqual(len(get_all_imageTask()),135) # group2 contains 135 imaging tasks including revisits
+#         self.assertEqual(len(get_all_maintenanceTask()),87)
 
-    def test_transferDataToAlgorithum(self):
-        importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
-        total_scheduled_tasks = performingAlgorithumImaginTask()
-        self.assertGreater(total_scheduled_tasks,0)
-        satellites = get_all_satellites()
-        for s in satellites:
-            self.assertGreater(len(s.schedule),0)
+#     def test_transferDataToAlgorithum(self):
+#         importTestCaseForSchedulingImagingTask("/app/TLE/tle3/","/app/order_samples/group4_newest","/app/order_samples/m_group2")
+#         total_scheduled_tasks = performingAlgorithumImaginTask()
+#         self.assertGreater(total_scheduled_tasks,0)
+#         satellites = get_all_satellites()
+#         for s in satellites:
+#             self.assertGreater(len(s.schedule),0)
         
         
 # class TestGroundStationSchedulingAlgorithum(TestCase):

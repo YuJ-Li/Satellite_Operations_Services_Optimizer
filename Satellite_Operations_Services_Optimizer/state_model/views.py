@@ -52,14 +52,19 @@ def getGlobalTime(request):
     for s in satellites:
         s.save()
 
-    total=0
+    total_imaging = 0
+    total_maintenance = 0
     for satellite in satellites:
         print(f"------{satellite.name} capacity: {satellite.capacity_used}/{satellite.storage_capacity}------")
         schedule = json.loads(satellite.schedule)
-        total += len(schedule)
         for t in schedule:
             print(f"{t[0]}         {t[1]} --> {t[2]}")
-    print(f'{total} imaging tasks got scheduled.')
+            task = get_task_by_name_from_specific_list(t[0], all_tasks)
+            if isinstance(task, ImageTask): total_imaging+=1
+            elif isinstance(task, MaintenanceTask): total_maintenance+=1
+    print('=========================================')
+    print(f'{total_imaging} imaging tasks got scheduled.')
+    print(f'{total_maintenance} maintenance tasks got scheduled.')
 
     return Response(global_time)
     
