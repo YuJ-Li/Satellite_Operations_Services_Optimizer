@@ -39,8 +39,9 @@ def getGlobalTime(request):
     print(f'Got {len(maintenance_tasks)} maintenance tasks')
     task_groups = associate_maintenance_tasks(maintenance_tasks)
     all_tasks = list(maintenance_tasks) + list(imaging_tasks)
-    for task_group in task_groups:
-        add_new_maintenance_task(satellites, task_group, all_tasks)
+    # for task_group in task_groups:
+    add_new_maintenance_task(satellites, task_groups, all_tasks)
+            
 
     # imaging tasks
     imaging_tasks_prio = group_by_priority(imaging_tasks)
