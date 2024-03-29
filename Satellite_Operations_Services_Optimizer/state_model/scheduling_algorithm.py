@@ -745,23 +745,27 @@ def add_new_maintenance_task(satellites, task_groups, all_tasks):
             actual_start_time = convert_str_to_datetime(t[1])
             actual_end_time = convert_str_to_datetime(t[2])
             task = get_task_by_name_from_specific_list(t[0],all_tasks)
-            if actual_start_time > GLOBAL_TIME: # if the task has not been executed yet
-                tasks_to_remove.append(t) # remove it from satellite schedule
-                if task.is_head:
-                    task.is_head = False
-                    next_t = get_task_by_name_from_specific_list(task.next_maintenance, all_tasks)
-                    next_t.is_head = True # assign its next occurence to be the head
-                    next_t.start_time = actual_start_time + dt.timedelta(seconds=int(task.min_gap))
-                    next_t.end_time = actual_end_time + dt.timedelta(seconds=int(task.max_gap)) + next_t.duration
-            elif actual_start_time <= GLOBAL_TIME and actual_end_time > GLOBAL_TIME: # if the task is being executed
-                remove_m_task_from_task_groups(task.name, task_groups)
-            elif actual_end_time <= GLOBAL_TIME: # if the task is completed
-                tasks_to_remove.append(t) # remove it from satellite schedule
-                remove_m_task_from_task_groups(task.name, task_groups)
-                MAINTENANCE_TASK_HISTORY.append(t)
-                if t.is_head:
-                    t.is_head = False
-                    get_task_by_name(t.next_maintenance).is_head = True # assign its next occurence to be the head
+            if isinstance(task, MaintenanceTask):
+                if actual_start_time > GLOBAL_TIME: # if the task has not been executed yet
+                    tasks_to_remove.append(t) # remove it from satellite schedule
+                elif actual_start_time <= GLOBAL_TIME and actual_end_time > GLOBAL_TIME: # if the task is being executed
+                    remove_m_task_from_task_groups(task.name, task_groups)
+                    if task.is_head:
+                        task.is_head = False
+                        next_t = get_task_by_name_from_specific_list(task.next_maintenance, all_tasks)
+                        next_t.is_head = True # assign its next occurence to be the head
+                        next_t.start_time = actual_start_time + dt.timedelta(seconds=int(task.min_gap))
+                        next_t.end_time = actual_end_time + dt.timedelta(seconds=int(task.max_gap)) + next_t.duration
+                elif actual_end_time <= GLOBAL_TIME: # if the task is completed
+                    tasks_to_remove.append(t) # remove it from satellite schedule
+                    remove_m_task_from_task_groups(task.name, task_groups)
+                    MAINTENANCE_TASK_HISTORY.append(task)
+                    if task.is_head:
+                        task.is_head = False
+                        next_t = get_task_by_name(task.next_maintenance).is_head = True # assign its next occurence to be the head
+                        next_t.is_head = True # assign its next occurence to be the head
+                        next_t.start_time = actual_start_time + dt.timedelta(seconds=int(task.min_gap))
+                        next_t.end_time = actual_end_time + dt.timedelta(seconds=int(task.max_gap)) + next_t.duration
 
         # remove completed tasks and un executed tasks
         for t in tasks_to_remove:
