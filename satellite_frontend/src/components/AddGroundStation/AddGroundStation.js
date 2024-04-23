@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AddGroundStation.css'; // Reusing the CSS from AddSatellite for styling
-import backgroundImage from '../../assets/background.jpg'; // Adjust the path as necessary
+
 
 function AddGroundStation() {
   const [groundStation, setGroundStation] = useState({

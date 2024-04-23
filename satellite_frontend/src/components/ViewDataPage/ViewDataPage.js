@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './ViewDataPage.css'; // Importing the CSS file for styling
-import backgroundImage from '../../assets/background.jpg';
 import axios from 'axios'
 
 function ViewDataPage() {
@@ -75,7 +73,6 @@ function ViewDataPage() {
   };
 
   const backgroundStyle = {
-    backgroundImage: `url(${backgroundImage})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     minHeight: '100vh', // Ensure it covers the full viewport height

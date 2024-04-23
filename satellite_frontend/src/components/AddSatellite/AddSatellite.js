@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AddSatellite.css'; // Importing the CSS file for styling
-import backgroundImage from '../../assets/background.jpg';  // Adjust the path as necessary
 import axios from 'axios'
 
-function AddSatellite() {
+const AddSatellite = () => {
   const [satellite, setSatellite] = useState({
     name: '',
     maintenance_without_outage: '[]',
@@ -51,23 +49,36 @@ function AddSatellite() {
   };
 
   return (
-    <div className="addSatelliteContainer" style={{ backgroundImage: `url(${backgroundImage})` }}>
-      <form onSubmit={handleSubmit} className="addSatelliteForm">
-        <label>
-          Satellite Name:
-          <input type="text" name="name" value={satellite.name} onChange={handleChange} required />
-        </label>
-        <label>
-          Storage Capacity (MB):
-          <input type="number" name="storage_capacity" value={satellite.storage_capacity} onChange={handleChange} required />
-        </label>
-        <label>
-          TLE:
-          <input type="file" accept=".txt" onChange={handleFileChange} required />
-        </label>
-        <button type="submit">Add Satellite</button>
-      </form>
-    </div>
+    <section className=" background satellite-page-container">
+      <div className="sat-page-title">
+        <span>01</span>
+        <p>Add Satellites</p>
+      </div>
+      <div className="sat-page-content-wrapper">
+        <div className="sat-page-content-left">
+          <div className="addSatelliteContainer">
+            <form onSubmit={handleSubmit} className="addSatelliteForm">
+              <label>
+                Satellite Name:
+                <input type="text" name="name" value={satellite.name} onChange={handleChange} required />
+              </label>
+              <label>
+                Storage Capacity (MB):
+                <input type="number" name="storage_capacity" value={satellite.storage_capacity} onChange={handleChange} required />
+              </label>
+              <label>
+                TLE:
+                <input type="file" accept=".txt" onChange={handleFileChange} required />
+              </label>
+              <button type="submit">Add Satellite</button>
+            </form>
+          </div>
+        </div>
+        <div className="sat-page-content-right">
+          <img src="assets/image-launch-vehicle-portrait.jpg" alt='launch-vehicle' />
+        </div>
+      </div>
+    </section>
   );
 }
 

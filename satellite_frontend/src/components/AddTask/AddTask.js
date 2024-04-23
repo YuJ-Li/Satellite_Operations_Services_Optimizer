@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AddTask.css'; // Make sure to create this CSS file
-import backgroundImage from '../../assets/background.jpg'; // Adjust the path as necessary
 import axios from 'axios'
 
 

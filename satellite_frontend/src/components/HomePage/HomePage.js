@@ -1,56 +1,23 @@
-import React from 'react';
-import './HomePage.css'; // Importing CSS for styling
-import backgroundImage from '../../assets/background.jpg'; // Importing the background image
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Importing useNavigate instead of useHistory
 
-function HomePage() {
-  const navigate = useNavigate(); // useNavigate for navigation
-
-  // Inline style for the background image
-  const homePageStyle = {
-    backgroundImage: `url(${backgroundImage})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  // Function to handle navigation
-  const navigateToViewData = () => {
-    navigate('/view-data');
-  };
-
-  const navigateToAddSatellite = () => {
-    navigate('/add-satellite');
-  };
-
-  const navigateToGroundStation = () => {
-    navigate('/add-groundstation');
-  };
-
-  const navigateToOutage = () => {
-    navigate('/add-outage');
-  };
-
-  const navigateToTask = () => {
-    navigate('/add-task');
-  };
+const Home = () => {
   return (
-    <div style={homePageStyle}>
-      <div className="content">
-        <h1>Welcome to the Satellite Optimization Tool</h1>
-        <div className="buttonGroup">
-          <button onClick={navigateToViewData}>View Data</button>
-          <button onClick={navigateToAddSatellite}>Add Satellite</button>
-          <button onClick={navigateToGroundStation}>Add Ground Station</button>
-          <button onClick={navigateToOutage}>Add Outage</button>
-          <button onClick={navigateToTask}>Add Tasks</button>
+    <section className=" background home-page-container">
+      <div className="home-page-content-container">
+        <div className="home-page-content-left">
+          <p className="home-page-content-left-1"> Satellite Operations Services Optimizer</p>
+          <h1 className="home-page-content-left-2"> SOSO</h1>
+          <p className="home-page-content-left-3">
+            Seamlessly scheduler and downlinking images from a constellation of imaging satellites.
+          </p>
+        </div>
+        <div className="home-page-content-right-wrapper">
+
         </div>
       </div>
-    </div>
+    </section>
   );
-}
+};
 
-export default HomePage;
+export default Home;
