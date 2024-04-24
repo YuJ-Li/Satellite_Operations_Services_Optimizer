@@ -1,32 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 
+const AddTask = () => {
+  const [taskTypeOptions] = useState([
+    { name: 'Maintenance Task', value: 'MaintenanceTask' },
+    { name: 'Image Task', value: 'ImageTask' },
+  ]);
 
-
-function AddTask() {
-  const [taskType, setTaskType] = useState('MaintenanceTask');
+  const [activeTaskType, setActiveTaskType] = useState('MaintenanceTask');
   const [task, setTask] = useState({
-  //   // Common attributes
-  //   name: '',
-  //   start_time: '',
-  //   end_time: '',
-  //   priority: '',
-  //   duration: '',
-  //   // MaintenanceTask specific
-  //   next_maintenance: '',
-  //   is_head: false,
-  //   min_gap: '',
-  //   max_gap: '',
-  //   payload_outage: false,
-  //   // ImageTask specific
-  //   image_type: '',
-  //   imagingRegionLatitude: '',
-  //   imagingRegionLongitude: '',
-  //   achievability: '',
     name: '',
     jsonData: null,
   });
+
+  useEffect(() => {
+    // adds the active class as page loads
+    let linkItem = document.querySelector("#task");
+
+    linkItem.classList.add("active");
+
+    return () => {
+      // remove the active class as the page unmounts
+      linkItem.classList.remove("active");
+    };
+  }, [activeTaskType]);
+
 
   const navigate = useNavigate();
 
@@ -38,7 +37,6 @@ function AddTask() {
       const fileContent = event.target.result;
       try {
         const parsedJson = JSON.parse(fileContent)
-
         setTask({ ...task, jsonData: JSON.stringify(parsedJson) })
       } catch (error) {
         console.error('Error parsing JSON:', error);
@@ -46,7 +44,6 @@ function AddTask() {
     }
     reader.readAsText(file)
   };
-
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -56,14 +53,13 @@ function AddTask() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('Task to add:', task);
-    // Add logic to send data to backend
     try {
-      console.log("!!!!!!!The task type is ",taskType)
-      var response = ""
-      if (taskType==="MaintenanceTask"){
+      console.log("!!!!!!!The task type is ",activeTaskType)
+      let response = "";
+      if (activeTaskType === "MaintenanceTask") {
         console.log("Enter as a maintenance task")
         response = await axios.post('http://localhost:8000/maintenanceTasks/', task);
-      } else if (taskType==="ImageTask"){
+      } else if (activeTaskType === "ImageTask") {
         console.log("Enter as an image task")
         response = await axios.post('http://localhost:8000/imagingTasks/', task);
       }
@@ -77,27 +73,47 @@ function AddTask() {
   };
 
   return (
-    <div className="addTaskContainer" style={{ backgroundImage: `url(${backgroundImage})` }}>
-      <form onSubmit={handleSubmit} className="addTaskForm">
-        <label>
-          Task Type:
-          <select name="taskType" value={taskType || ''} onChange={(e) => setTaskType(e.target.value)}>
-            <option value="MaintenanceTask">Maintenance Task</option>
-            <option value="ImageTask">Image Task</option>
-          </select>
-        </label>
-        <label>
-          Task Name:
-          <input type="text" name="name" value={task.name} onChange={handleChange} required />
-        </label>
-        <label>
-          Upload Json File:
-          <input type = "file" accept=".json" onChange={handleFileChange} />
-        </label>
-        
-        <button type="submit">Add Task</button>
-      </form>
-    </div>
+    <section className="background task-page-container">
+      <div className="task-page-wrapper">
+        <div className="task-page-content-left">
+          <div className="task-page-content-left-1">
+              <span>03</span>
+              <p>Add Task & Schedule</p>
+          </div>
+          <div className="task-page-content-left-2">
+              <img src="assets/earth.png" alt="earth" />
+          </div>
+        </div>
+
+      <div className="task-page-content-right">
+        <form onSubmit={handleSubmit} className="addTaskForm">
+          <div className="task-page-content-right-nav">
+            {taskTypeOptions.map(option => (
+              <div
+                id={option.value === activeTaskType ? "task" : ""}
+                key={option.value}
+                className="task-page-content-nav-item"
+                onClick={() => setActiveTaskType(option.value)}
+              >
+                {option.name}
+              </div>
+            ))}
+          </div>
+          <label>
+            Task Name:
+            <input type="text" name="name" value={task.name} onChange={handleChange} required />
+          </label>
+          <label>
+            Upload Json File:
+            <input type="file" accept=".json" onChange={handleFileChange} />
+          </label>
+          <button type="submit">Add Task</button>
+        </form>
+      </div>
+
+      </div>
+
+    </section>
   );
 }
 

@@ -261,30 +261,28 @@ body {
   line-height: 3.5rem;
   letter-spacing: 2px;
 }
-/* Destination Page */
-.destination-page-container {
-  background-image: url("/public/assets/background-home-desktop.jpg");
+/* Add Tasks Page */
+.task-page-container {
+  background-image: url("/public/assets/background-task-desktop.jpg");
 }
 
-.destination-page-wrapper {
+.task-page-wrapper {
   margin-top: 5%;
   padding: 10%;
   display: flex;
 }
 
-.destination-page-content-left {
-  /* background-color: beige; */
+.task-page-content-left {
   flex: 60%;
-
   display: flex;
   flex-direction: column;
 }
 
-.destination-page-content-left-1 {
+.task-page-content-left-1 {
   display: flex;
   margin-bottom: 15%;
 }
-.destination-page-content-left-1 span {
+.task-page-content-left-1 span {
   display: block;
   color: var(--color-white);
   opacity: 0.25;
@@ -296,7 +294,7 @@ body {
   margin-right: 2%;
 }
 
-.destination-page-content-left-1 p {
+.task-page-content-left-1 p {
   font-weight: 400;
   font-size: 2.5rem;
   line-height: 3.4rem;
@@ -305,13 +303,12 @@ body {
   color: var(--color-white);
 }
 
-.destination-page-content-left-2 {
+.task-page-content-left-2 {
   width: 100%;
   height: 100%;
-  /* background-color: aquamarine; */
 }
 
-.destination-page-content-left-2 img {
+.task-page-content-left-2 img {
   display: block;
   height: 40rem;
   width: 40em;
@@ -322,28 +319,20 @@ body {
   animation-timing-function: linear;
 }
 
-.destination-page-content-right {
-  /* background-color: aqua; */
+.task-page-content-right {
   flex: 50%;
   margin-top: 5%;
-
   display: flex;
   flex-direction: column;
 }
 
-.destination-page-content-right-nav {
-  /* background-color: bisque; */
-  /* position: absolute;
-  width: 80%;
-  top: 40%;
-  left: 52%; */
-
+.task-page-content-right-nav {
   padding: 2%;
   display: flex;
   margin-bottom: 5%;
 }
 
-.destination-page-content-nav-item {
+.task-page-content-nav-item {
   margin-right: 5%;
   padding-bottom: 2%;
   font-weight: 400;
@@ -357,16 +346,16 @@ body {
   border-bottom: 1px solid transparent;
 }
 
-.destination-page-content-nav-item:hover {
+.task-page-content-nav-item:hover {
   border-bottom: 1px solid var(--color-primary);
 }
 
-.destination-page-content-nav-item.active {
+.task-page-content-nav-item.active {
   color: var(--color-white);
   border-bottom: 1px solid var(--color-white);
 }
 
-.destination-page-content-right-1 h1 {
+.task-page-content-right-1 h1 {
   font-family: "Bellefair", serif;
   font-weight: 400;
   font-size: 8rem;
@@ -376,14 +365,14 @@ body {
   margin-bottom: 5%;
 }
 
-.destination-page-content-right-2 {
+.task-page-content-right-2 {
   width: 100%;
   height: 100%;
   /* background-color: aqua; */
   margin-bottom: 8%;
 }
 
-.destination-page-content-right-2 p {
+.task-page-content-right-2 p {
   font-size: 1.6rem;
   color: var(--color-primary);
   font-weight: 400;
@@ -392,21 +381,21 @@ body {
   height: 80%;
 }
 
-.destination-page-content-line {
+.task-page-content-line {
   border-bottom: 1px solid #383b4b;
   width: 80%;
 }
 
-.destination-page-content-right-3 {
+.task-page-content-right-3 {
   display: flex;
   padding: 5%;
 }
 
-.destination-page-content-right-3 div {
+.task-page-content-right-3 div {
   margin-right: 15%;
 }
 
-.destination-page-content-right-3 div span {
+.task-page-content-right-3 div span {
   font-weight: 400;
   font-size: 1.2rem;
   letter-spacing: 2px;
@@ -414,14 +403,14 @@ body {
   margin-bottom: 10%;
 }
 
-.destination-page-content-right-3 p {
+.task-page-content-right-3 p {
   font-family: "Bellefair", serif;
   font-weight: 400;
   font-size: 2.5rem;
   color: var(--color-white);
   text-transform: uppercase;
 }
-.destination-page-content-right span {
+.task-page-content-right span {
   display: block;
   font-weight: 400;
   font-size: 1.2rem;
@@ -429,22 +418,64 @@ body {
   color: var(--color-primary);
 }
 
-/* Crew Page */
-
-.crew-page-container {
-  background-image: url("/public/assets/background-home-desktop.jpg");
+.addTaskForm {
+  line-height: 2rem;
+  font-size: 1.7rem;
+  color: white;
+  padding: 20px;
+  background: rgb(49,45,45);
+  background: linear-gradient(0deg, rgba(49,45,45,0) 0%, rgba(49,45,45,1) 100%);
+  border-radius: 10px;
+  width: 50%;
+  height: 50rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.crew-page-title {
+.addTaskForm label {
+  margin-bottom: 15px;
+}
+
+.addTaskForm label input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: transparent;
+  color: white;
+}
+
+.addTaskForm button {
+  padding: 10px;
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+
+.addTaskForm button:hover {
+  color: rgb(0, 0, 0);
+  background-color: white;
+}
+
+/* Ground Station Page */
+.ground-page-container {
+  background-image: url("/public/assets/background-ground-desktop.jpg");
+}
+
+.ground-page-title {
   position: absolute;
-  /* background-color: aqua; */
-  top: 25%;
+  top: 22%;
   left: 10%;
   width: 40%;
-
   display: flex;
 }
-.crew-page-title span {
+
+.ground-page-title span {
   font-weight: 700;
   font-size: 2.8rem;
   color: var(--color-white);
@@ -453,7 +484,7 @@ body {
   margin-right: 2%;
 }
 
-.crew-page-title p {
+.ground-page-title p {
   font-weight: 400;
   font-size: 2.8rem;
   letter-spacing: 4px;
@@ -461,95 +492,138 @@ body {
   color: var(--color-white);
 }
 
-.crew-content-wrapper {
+.ground-page-content-wrapper {
   position: absolute;
-  top: 35%;
+  top: 29%;
   left: 10%;
-  width: 80%;
-
-  /* background-color: antiquewhite; */
-
+  right: 10%;
+  max-width: 100%;
   display: flex;
+  justify-content: space-between;
 }
 
-.crew-content-left {
+.ground-page-content-left {
+  flex: 0 1 50%;
+  display: flex;
+  align-items: center;
+}
+
+.ground-page-content-left-1 {
   display: flex;
   flex-direction: column;
 }
 
-.crew-content-left-1 p {
-  font-family: "Bellefair", serif;
-  font-weight: 400;
-  font-size: 3rem;
+.ground-page-content-left-2 {
+  margin-left: 10%;
+}
+
+.ground-content-title {
   text-transform: uppercase;
-  color: var(--color-white);
-  opacity: 0.5;
+  font-weight: 400;
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  color: #d0d6f9;
   margin-bottom: 2%;
 }
 
-.crew-content-left-1 h1 {
+.ground-page-content-left-2 h1 {
   font-family: "Bellefair", serif;
+
   font-weight: 400;
-  font-size: 5.6rem;
   text-transform: uppercase;
-  color: var(--color-white);
+  color: #ffff;
+  font-size: 5rem;
 }
 
-.crew-content-left-2 p {
+.ground-description {
   font-weight: 400;
   font-size: 1.8rem;
-  line-height: 3rem;
-  padding-top: 5%;
-  width: 60%;
-  color: var(--color-primary);
+  line-height: 3.2rem;
+  text-transform: none;
+  color: #d0d6f9;
+  margin-top: 5%;
+  width: 90%;
 }
 
-.crew-content-right img {
+.ground-page-content-right {
+  flex: 0 1 50%;
+}
+
+.ground-page-content-right img {
   display: block;
-  width: 48rem;
-  height: 60rem;
-  transform: translateY(-15%);
+  width: 80%;
+  height: 50rem;
+  margin-left: auto;
 }
 
-.dots-container {
-  position: absolute;
-  left: 10%;
-  bottom: 10%;
-  width: 20%;
+.ground-landscape {
+  display: none;
+}
 
+.addGroundContainer {
+  height: 100%;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
   display: flex;
+  justify-content: center; /* Horizontally center content */
+  align-items: center; /* Vertically center content */
 }
 
-.dots {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  margin-right: 5%;
-  background-color: var(--color-white);
-  opacity: 0.17;
+.addGroundForm {
+  line-height: 2rem;
+  font-size: 1.7rem;
+  color: white;
+  padding: 20px;
+  background: rgb(49,45,45);
+  background: linear-gradient(0deg, rgba(49,45,45,0) 0%, rgba(49,45,45,1) 100%);
+  border-radius: 10px;
+  width: 50%;
+  height: 50rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.addGroundForm label {
+  margin-bottom: 15px;
+}
+
+.addGroundForm label input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: transparent;
+  color: white;
+}
+
+.addGroundForm button {
+  padding: 10px;
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+  border-radius: 25px;
   cursor: pointer;
+  margin-top: 10px;
 }
 
-.dots:hover {
-  opacity: 0.5;
-}
 
-.dots.active {
-  opacity: 1;
+.addGroundForm button:hover {
+  color: rgb(0, 0, 0);
+  background-color: white;
 }
 
 /* Satellite Page */
 .satellite-page-container {
-  background-image: url("/public/assets/background-technology-desktop.jpg");
+  background-image: url("/public/assets/background-satellite-desktop.jpg");
 }
 
 .sat-page-title {
   position: absolute;
-  /* background-color: aqua; */
   top: 22%;
   left: 10%;
   width: 40%;
-
   display: flex;
 }
 
@@ -576,9 +650,6 @@ body {
   left: 10%;
   right: 10%;
   max-width: 100%;
-
-  /* background-color: antiquewhite; */
-
   display: flex;
   justify-content: space-between;
 }
@@ -592,43 +663,6 @@ body {
 .sat-page-content-left-1 {
   display: flex;
   flex-direction: column;
-}
-
-.sat-circle {
-  width: 8rem;
-  height: 8rem;
-  border-radius: 50%;
-  /* background-color: var(--color-white); */
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  cursor: pointer;
-}
-
-.sat-circle:not(:last-child) {
-  margin-bottom: 35%;
-}
-
-.sat-circle:hover {
-  border: 1px solid #ffff;
-}
-
-.sat-circle span {
-  font-family: "Bellefair", serif;
-  font-size: 3rem;
-  font-weight: 400;
-  text-align: center;
-  color: var(--color-white);
-}
-
-.sat-circle.active {
-  background-color: #fff;
-}
-
-.sat-circle.active span {
-  color: #0b0d17;
 }
 
 .sat-page-content-left-2 {
@@ -690,11 +724,14 @@ body {
 }
 
 .addSatelliteForm {
-  top: 10px;
+  line-height: 4rem;
+  font-size: 1.7rem;
+  color: white;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.8); /* Semi-transparent background for the form */
+  background: rgb(49,45,45);
+  background: linear-gradient(0deg, rgba(49,45,45,0) 0%, rgba(49,45,45,1) 100%);
   border-radius: 10px;
-  width: 80%;
+  width: 50%;
   height: 50rem;
   display: flex;
   flex-direction: column;
@@ -710,18 +747,22 @@ body {
   margin-top: 5px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  background-color: transparent;
+  color: white;
 }
 
 .addSatelliteForm button {
   padding: 10px;
-  background-color: #007bff;
+  background-color: transparent;
   color: white;
-  border: none;
-  border-radius: 4px;
+  border: 2px solid white;
+  border-radius: 25px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 2rem;
 }
 
+
 .addSatelliteForm button:hover {
-  background-color: #0056b3;
+  color: rgb(0, 0, 0);
+  background-color: white;
 }

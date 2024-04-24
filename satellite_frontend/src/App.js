@@ -17,9 +17,9 @@ function App() {
       <Route path="/" element={<Header />}>
         <Route index element={<Home />} />
         <Route path="/add-satellite" element={<AddSatellite />} />
-        <Route index element={<AddGroundStation />} />
-        <Route index element={<AddTask />} />
-        <Route index element={<ViewDataPage />} />
+        <Route path="/add-groundstation" element={<AddGroundStation />} />
+        <Route path="/add-task" element={<AddTask />} />
+        <Route path="/view-data" element={<ViewDataPage />} />
       </Route>
     </Routes>
     </main>
