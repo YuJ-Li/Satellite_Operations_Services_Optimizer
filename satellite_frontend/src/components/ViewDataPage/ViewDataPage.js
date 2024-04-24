@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 
-function ViewDataPage() {
+const ViewDataPage = () => {
 
   const [satellites, setSatellites] = useState([]);
   const [globalTime, setGlobalTime] = useState({
@@ -26,22 +25,6 @@ function ViewDataPage() {
     };
   }, []); // Empty dependency array ensures useEffect only runs once on component mount
 
-
-  // const [satellites] = useState([
-  //   // { name: 'Satellite1', maintenance_without_outage: '[]', schedule: '[]', tle: 'TLE Data', storage_capacity: 500, capacity_used: 250 },
-  //   // Add more entries as needed
-  //   try {
-  //     const response = await axios.get('http://localhost:8000/satellites/', satellites);
-  //   }
-  //   catch (error) {
-  //     console.error('Error posting data:', error);
-  //   }
-  // ]);
-
-  // const [tasks] = useState([
-  //   { name: 'Task1', start_time: '2023-01-01 10:00', end_time: '2023-01-01 12:00', priority: 1, duration: '2 hours' },
-  //   // Add more entries as needed
-  // ]);
 
   const [groundStations] = useState([
     { groundStationId: 'GS1', stationName: 'Ground Station 1', latitude: 34.05, longitude: -118.25, height: 100, stationMask: 'mask1', uplinkRate: 100, downlinkRate: 150 },
@@ -84,77 +67,59 @@ function ViewDataPage() {
   };
 
   return (
-    <div className="viewDataPage" style={backgroundStyle}>
-      <h1>View Data</h1>
-      {/* SET GLOBAL TIME AND SCHEDULE */}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Set Global Time:
-          <input type="text" name="time" value={globalTime.time} onChange={handleChange} required/>
-        </label>
-        <button type="submit" onClick={handleClick}>Set Global Time and Generate Schedule</button>
-      </form>
+    <section className="background data-page-container">
+      <div className="data-page-wrapper">
+        <div className="data-page-content-left">
+          <div className="data-page-content-left-1">
+              <span>04</span>
+              <p>View Data</p>
+          </div>
+          <div className="data-page-content-left-2">
+              <img src="assets/earth.png" alt="earth" />
+          </div>
+        </div>
 
-      <div className="dataSection">
-        {/* SATELLITE TABLE */}
-        <h2>Satellites</h2>
-        <table className="dataTable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>TLE</th>
-              <th>Storage Capacity (KB)</th>
-              <th>Capacity Used (KWh)</th>
-              <th>Schedule</th>
-              {/* <th>Maintenance Without Outage</th> */}
-            </tr>
-          </thead>
-          <tbody>
-            {satellites.map((satellite, index) => (
-              <tr key={index}>
-                <td>{satellite.name}</td>
-                <td>{satellite.tle}</td>
-                <td>{satellite.storage_capacity}</td>
-                <td>{satellite.capacity_used}</td>
-                <td>{satellite.schedule}</td>  
-                {/* <td>{satellite.maintenance_without_outage}</td> */}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="data-page-content-right">
+          <form onSubmit={handleSubmit} className="setTimeForm">
+            <label>
+              Set Global Time:
+              <input type="text" name="time" value={globalTime.time} onChange={handleChange} required/>
+            </label>
+            <button type="submit" onClick={handleClick}>Set Global Time and Generate Schedule</button>
+            <div>
+              <div className="table-title"><h2>Satellites</h2></div>
+              
+              <table className="schedule-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>TLE</th>
+                    <th>Storage Capacity (KB)</th>
+                    <th>Capacity Used (KWh)</th>
+                    <th>Schedule</th>
+                    {/* <th>Maintenance Without Outage</th> */}
+                  </tr>
+                </thead>
+                <tbody>
+                  {satellites.map((satellite, index) => (
+                    <tr key={index}>
+                      <td>{satellite.name}</td>
+                      <td>{satellite.tle}</td>
+                      <td>{satellite.storage_capacity}</td>
+                      <td>{satellite.capacity_used}</td>
+                      <td>{satellite.schedule}</td>  
+                      {/* <td>{satellite.maintenance_without_outage}</td> */}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </form>
+          
+        </div>
         
-        {/* GROUND STATION TABLE
-        <h2>Ground Stations</h2>
-        <table className="dataTable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Maintenance Without Outage</th>
-              <th>Schedule</th>
-              <th>TLE</th>
-              <th>Storage Capacity (KB)</th>
-              <th>Capacity Used (KWh)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {satellites.map((satellite, index) => (
-              <tr key={index}>
-                <td>{satellite.name}</td>
-                <td>{satellite.maintenance_without_outage}</td>
-                <td>{satellite.schedule}</td>
-                <td>{satellite.tle}</td>
-                <td>{satellite.storage_capacity}</td>
-                <td>{satellite.capacity_used}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table> */}
-
-
       </div>
-
-      {/* Repeat for tasks, ground stations, and outages */}
-    </div>
+    </section>
   );
 }
 

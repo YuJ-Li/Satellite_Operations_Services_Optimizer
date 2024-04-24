@@ -355,61 +355,11 @@ body {
   border-bottom: 1px solid var(--color-white);
 }
 
-.task-page-content-right-1 h1 {
-  font-family: "Bellefair", serif;
-  font-weight: 400;
-  font-size: 8rem;
-  /* line-height: 11px; */
-  color: var(--color-white);
-  text-transform: uppercase;
-  margin-bottom: 5%;
-}
-
-.task-page-content-right-2 {
-  width: 100%;
-  height: 100%;
-  /* background-color: aqua; */
-  margin-bottom: 8%;
-}
-
-.task-page-content-right-2 p {
-  font-size: 1.6rem;
-  color: var(--color-primary);
-  font-weight: 400;
-  line-height: 32px;
-  width: 80%;
-  height: 80%;
-}
-
 .task-page-content-line {
   border-bottom: 1px solid #383b4b;
   width: 80%;
 }
 
-.task-page-content-right-3 {
-  display: flex;
-  padding: 5%;
-}
-
-.task-page-content-right-3 div {
-  margin-right: 15%;
-}
-
-.task-page-content-right-3 div span {
-  font-weight: 400;
-  font-size: 1.2rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 10%;
-}
-
-.task-page-content-right-3 p {
-  font-family: "Bellefair", serif;
-  font-weight: 400;
-  font-size: 2.5rem;
-  color: var(--color-white);
-  text-transform: uppercase;
-}
 .task-page-content-right span {
   display: block;
   font-weight: 400;
@@ -765,4 +715,177 @@ body {
 .addSatelliteForm button:hover {
   color: rgb(0, 0, 0);
   background-color: white;
+}
+
+
+/* Data page*/
+.data-page-container {
+  background-image: url("/public/assets/background-task-desktop.jpg");
+}
+
+.data-page-wrapper {
+  margin-top: 5%;
+  padding: 10%;
+  display: flex;
+}
+
+.data-page-content-left {
+  flex: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-page-content-left-1 {
+  display: flex;
+  margin-bottom: 15%;
+}
+.data-page-content-left-1 span {
+  display: block;
+  color: var(--color-white);
+  opacity: 0.25;
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 3.5rem;
+  letter-spacing: 4px;
+  mix-blend-mode: normal;
+  margin-right: 2%;
+}
+
+.data-page-content-left-1 p {
+  font-weight: 400;
+  font-size: 2.5rem;
+  line-height: 3.4rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+.data-page-content-left-2 {
+  width: 100%;
+  height: 100%;
+}
+
+.data-page-content-left-2 img {
+  display: block;
+  height: 40rem;
+  width: 40em;
+  margin-left: 15%;
+  animation-name: spin;
+  animation-duration: 5000ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+.data-page-content-right {
+  flex: 50%;
+  margin-top: 5%;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-page-content-right-nav {
+  padding: 2%;
+  display: flex;
+  margin-bottom: 5%;
+}
+
+.data-page-content-nav-item {
+  margin-right: 5%;
+  padding-bottom: 2%;
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 19px;
+  letter-spacing: 2px;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+
+.data-page-content-nav-item:hover {
+  border-bottom: 1px solid var(--color-primary);
+}
+
+.data-page-content-nav-item.active {
+  color: var(--color-white);
+  border-bottom: 1px solid var(--color-white);
+}
+
+.data-page-content-line {
+  border-bottom: 1px solid #383b4b;
+  width: 80%;
+}
+
+.data-page-content-right span {
+  display: block;
+  font-weight: 400;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: var(--color-primary);
+}
+
+.setTimeForm {
+  line-height: 2rem;
+  font-size: 1.7rem;
+  color: white;
+  padding: 20px;
+  background: rgb(49,45,45);
+  background: linear-gradient(0deg, rgba(49,45,45,0) 0%, rgba(49,45,45,1) 100%);
+  border-radius: 10px;
+  width: 100%;
+  height: 50rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.setTimeForm label {
+  margin-bottom: 15px;
+}
+
+.setTimeForm label input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: transparent;
+  color: white;
+}
+
+.setTimeForm button {
+  padding: 10px;
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.setTimeForm button:hover {
+  color: rgb(0, 0, 0);
+  background-color: white;
+}
+
+.table-title {
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+}
+
+.schedule-table {
+  width: 100%;
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border: 1px solid white;
+  padding: 8px
+}
+
+.schedule-table th{
+  background-color: rgba(255, 255, 255, 0.1);
 }

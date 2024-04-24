@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 
 const AddTask = () => {
@@ -26,8 +25,6 @@ const AddTask = () => {
     };
   }, [activeTaskType]);
 
-
-  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -65,7 +62,6 @@ const AddTask = () => {
       }
     
       console.log('Server response:', response);
-      navigate('/'); // Navigate after submission
     }
     catch (error) {
       console.error('Error posting data:', error);
@@ -78,7 +74,7 @@ const AddTask = () => {
         <div className="task-page-content-left">
           <div className="task-page-content-left-1">
               <span>03</span>
-              <p>Add Task & Schedule</p>
+              <p>Add Task</p>
           </div>
           <div className="task-page-content-left-2">
               <img src="assets/earth.png" alt="earth" />
@@ -110,9 +106,7 @@ const AddTask = () => {
           <button type="submit">Add Task</button>
         </form>
       </div>
-
       </div>
-
     </section>
   );
 }
