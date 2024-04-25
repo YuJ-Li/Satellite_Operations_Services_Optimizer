@@ -101,6 +101,7 @@ body {
 }
 
 .nav-link-item {
+  margin-left: 2em;
   text-transform: uppercase;
   text-decoration: none;
   display: flex;
@@ -846,6 +847,7 @@ body {
   height: 50rem;
   display: flex;
   flex-direction: column;
+  overflow-y:auto;
 }
 
 .setTimeForm label {
