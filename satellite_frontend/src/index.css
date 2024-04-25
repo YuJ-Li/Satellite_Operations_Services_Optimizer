@@ -848,6 +848,12 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y:auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+.setTimeForm::-webkit-scrollbar-button {
+  display: none; /* Hide the scrollbar buttons */
 }
 
 .setTimeForm label {
