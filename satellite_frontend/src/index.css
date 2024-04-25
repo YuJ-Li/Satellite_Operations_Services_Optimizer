@@ -314,7 +314,7 @@ body {
   width: 40em;
   margin-left: 15%;
   animation-name: spin;
-  animation-duration: 5000ms;
+  animation-duration: 10000ms;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
@@ -780,7 +780,7 @@ body {
   width: 40em;
   margin-left: 15%;
   animation-name: spin;
-  animation-duration: 5000ms;
+  animation-duration: 10000ms;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
