@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom';
 
 const AddTask = () => {
   const [taskTypeOptions] = useState([
@@ -7,6 +8,7 @@ const AddTask = () => {
     { name: 'Image Task', value: 'ImageTask' },
   ]);
 
+  const navigate = useNavigate();
   const [activeTaskType, setActiveTaskType] = useState('MaintenanceTask');
   const [task, setTask] = useState({
     name: '',
@@ -60,8 +62,9 @@ const AddTask = () => {
         console.log("Enter as an image task")
         response = await axios.post('http://localhost:8000/imagingTasks/', task);
       }
-    
+      
       console.log('Server response:', response);
+      navigate('/');
     }
     catch (error) {
       console.error('Error posting data:', error);

@@ -95,7 +95,7 @@ const ViewDataPage = () => {
                     <th>Name</th>
                     <th>TLE</th>
                     <th>Storage Capacity (KB)</th>
-                    <th>Capacity Used (KWh)</th>
+                    <th>Capacity Used (KB)</th>
                     <th>Schedule</th>
                     {/* <th>Maintenance Without Outage</th> */}
                   </tr>
