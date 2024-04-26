@@ -2,8 +2,6 @@ import React from "react";
 
 import { Outlet, Link } from "react-router-dom";
 
-// import SideMenu from "./SideMenu";
-
 const Header = () => {
   return (
     <section className="header-container">
@@ -13,30 +11,30 @@ const Header = () => {
         </div>
         <div className="nav-line"></div>
         <div className="nav-links-container">
-          <div className="nav-link-item show" to="/" id="home">
+          <Link to="/" className="nav-link-item show" id="home">
             <span>00</span>
-            <Link to="/" className="nav-link">Home</Link>
-          </div>
+            <span className="nav-link">Home</span>
+          </Link>
 
-          <div className="nav-link-item show" id="satellite">
+          <Link to="/add-satellite" className="nav-link-item show" id="satellite">
             <span>01</span>
-            <Link to="/add-satellite" className="nav-link">Satellites</Link>
-          </div>
+            <span className="nav-link">Satellites</span>
+          </Link>
 
-          <div className="nav-link-item show" id="groundstation">
+          <Link to="/add-groundstation" className="nav-link-item show" id="groundstation">
             <span>02</span>
-            <Link to="/add-groundstation" className="nav-link">Groundstations</Link>
-          </div>
+            <span className="nav-link">Groundstations</span>
+          </Link>
 
-          <div className="nav-link-item show" id="technology">
+          <Link to="/add-task" className="nav-link-item show" id="technology">
             <span>03</span>
-            <Link to="/add-task" className="nav-link">Tasks</Link>
-          </div>
+            <span className="nav-link">Tasks</span>
+          </Link>
 
-          <div className="nav-link-item show" id="technology">
+          <Link to="/view-data" className="nav-link-item show" id="technology">
             <span>04</span>
-            <Link to="/view-data" className="nav-link">Data</Link>
-          </div>
+            <span className="nav-link">Data</span>
+          </Link>
         </div>
       </nav>
       <Outlet />

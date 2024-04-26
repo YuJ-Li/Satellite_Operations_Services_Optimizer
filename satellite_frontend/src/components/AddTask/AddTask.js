@@ -81,7 +81,7 @@ const AddTask = () => {
       }
       console.log('Server response:', response);
       fetchData();
-      navigate('/');
+      window.location.reload();
     }
     catch (error) {
       console.error('Error posting data:', error);

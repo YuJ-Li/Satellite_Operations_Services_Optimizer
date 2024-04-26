@@ -24,7 +24,7 @@ const AddSatellite = () => {
     try {
       const response = await axios.post('http://localhost:8000/satellites/', satellite);
       console.log('Server response:', response);
-      navigate('/'); // Navigate after submission
+      window.location.reload();
     }
     catch (error) {
       console.error('Error posting data:', error);
