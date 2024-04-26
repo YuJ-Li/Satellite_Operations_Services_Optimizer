@@ -12,9 +12,6 @@ const Home = () => {
             Seamlessly scheduler and downlinking images from a constellation of imaging satellites.
           </p>
         </div>
-        <div className="home-page-content-right-wrapper">
-
-        </div>
       </div>
     </section>
   );
