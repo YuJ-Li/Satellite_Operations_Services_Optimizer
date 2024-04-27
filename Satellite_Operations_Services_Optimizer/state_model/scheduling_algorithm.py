@@ -270,14 +270,13 @@ def convert_str_to_datetime(datetime_str):
     return datetime_obj
 
 def get_image_type(image_type):
-    match image_type:
-        case "Low":
+    if image_type == "Low":
             return {'time_for_writing':LOW_WRITING_TIME, 'size':LOW_SIZE, 'dimension':LOW_DIMENSION}
             # return ImageTask.LOW
-        case "Medium":
+    elif image_type == "Medium":
             return {'time_for_writing':MEDIUM_WRITING_TIME, 'size':MEDIUM_SIZE, 'dimension':MEDIUM_DIMENSION}
             # return ImageTask.MEDIUM
-        case "High":
+    elif image_type == "High":
             return {'time_for_writing':HIGH_WRITING_TIME, 'size':HIGH_SIZE, 'dimension':HIGH_DIMENSION}
             # return ImageTask.HIGH
         
