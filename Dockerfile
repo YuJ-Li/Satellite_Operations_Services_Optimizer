@@ -19,8 +19,18 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN python -m pip install -r requirements.txt
 
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+RUN apt-get install -y nodejs
+
+
 WORKDIR /app
 COPY . /app
+
+WORKDIR /app/satellite_frontend
+RUN npm install react-scripts --save
+
+WORKDIR /app
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
