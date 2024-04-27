@@ -31,7 +31,9 @@ def getGlobalTime(request):
     satellites = get_all_satellites()
     print(f'Got {len(satellites)} satellites')
     set_satellites(satellites)
-
+    for s in satellites:
+        s.schedule = '[]'
+        s.capacity_used = 0
     # maintenance tasks
     imaging_tasks = get_all_imageTask()
     print(f'Got {len(imaging_tasks)} imaging tasks')

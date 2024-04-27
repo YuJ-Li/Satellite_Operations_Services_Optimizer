@@ -164,7 +164,6 @@ def check_imaging_task_can_fit_in_timeslot(empty_slot_start, empty_slot_end, ima
 def edf_maintenance(task_list, satellites):
     ''' priority_tasks is a dictionary of tasks grouped by priority'''
     # global ACCUMULATED_MAINTENANCE_TASKS 
-    # print('77777777777777777ACCUMULATED_MAINTENANCE_TASKS: ',priority_list)
     unscheduled_tasks = {}
     # sorts tasks in each priority group by deadline
     # for p_group in priority_list.items(): 
@@ -539,8 +538,7 @@ def add_new_imaging_task(satellites,imaging_tasks_prio,all_tasks):
     #         ACCUMULATED_IMAGING_TASKS[task.priority].append(task)
 
     # clear tasks that has been finished and that is being executed at current time
-    update_imaging_pool(all_tasks)
-        
+    update_imaging_pool(all_tasks) 
     # do EDF
     ACCUMULATED_IMAGING_TASKS = edf_imaging(ACCUMULATED_IMAGING_TASKS, satellites)
 
