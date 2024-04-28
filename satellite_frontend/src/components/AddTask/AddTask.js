@@ -40,7 +40,8 @@ const AddTask = () => {
       const fileContent = event.target.result;
       try {
         const parsedJson = JSON.parse(fileContent)
-        setTask({ ...task, jsonData: JSON.stringify(parsedJson) })
+        const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join('.');
+        setTask({ ...task, jsonData: JSON.stringify(parsedJson), name: fileNameWithoutExtension })
       } catch (error) {
         console.error('Error parsing JSON:', error);
       }
