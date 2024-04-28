@@ -919,3 +919,14 @@ body {
 .schedule-table th{
   background-color: rgba(255, 255, 255, 0.1);
 }
+
+.schedule-list {
+  padding: 0;
+  margin: 0;
+}
+
+.schedule-list-item {
+  list-style-type: disc;
+  margin-bottom: 0.5rem;
+  margin-left: 1.5rem;
+}

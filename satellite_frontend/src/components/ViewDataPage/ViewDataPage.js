@@ -107,7 +107,17 @@ const ViewDataPage = () => {
                       <td>{satellite.tle}</td>
                       <td>{satellite.storage_capacity}</td>
                       <td>{satellite.capacity_used}</td>
-                      <td>{satellite.schedule}</td>  
+                      <td>
+                        {satellite.schedule && (
+                          <ul className="schedule-list">
+                            {JSON.parse(satellite.schedule).map((scheduleItem, scheduleIndex) => (
+                              <li key={scheduleIndex} className="schedule-list-item">
+                                {scheduleItem[0]} - {scheduleItem[1]} to {scheduleItem[2]}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </td> 
                       {/* <td>{satellite.maintenance_without_outage}</td> */}
                     </tr>
                   ))}
