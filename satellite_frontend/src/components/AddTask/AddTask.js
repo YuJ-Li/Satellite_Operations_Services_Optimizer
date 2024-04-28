@@ -31,22 +31,42 @@ const AddTask = () => {
     };
   }, [activeTaskType]);
 
+  const readFileAsText = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        resolve(event.target.result);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsText(file);
+    });
+  };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    const reader = new FileReader()
-
-    reader.onload = (event) => {
-      const fileContent = event.target.result;
+  const handleFileChange = async (e) => {
+    const files = e.target.files;
+    let concatenatedNames = '';
+    let concatenatedJsonData = '';
+    let i = 0
+  
+    for (const file of files) {
+      const fileContent = await readFileAsText(file);
       try {
-        const parsedJson = JSON.parse(fileContent)
+        const parsedJson = JSON.parse(fileContent);
         const fileNameWithoutExtension = file.name.split('.').slice(0, -1).join('.');
-        setTask({ ...task, jsonData: JSON.stringify(parsedJson), name: fileNameWithoutExtension })
+        concatenatedJsonData += JSON.stringify(parsedJson);
+        concatenatedNames += fileNameWithoutExtension;
+        if (i !== files.length - 1) {
+          concatenatedJsonData += '! ';
+          concatenatedNames += ', ';
+        }
       } catch (error) {
         console.error('Error parsing JSON:', error);
       }
+      i++;
     }
-    reader.readAsText(file)
+    setTask({ ...task, jsonData: concatenatedJsonData, name: concatenatedNames });
   };
 
   const handleChange = (e) => {
@@ -71,23 +91,36 @@ const AddTask = () => {
     e.preventDefault();
     console.log('Task to add:', task);
     try {
-      console.log("!!!!!!!The task type is ",activeTaskType)
-      let response = "";
-      if (activeTaskType === "MaintenanceTask") {
-        console.log("Enter as a maintenance task")
-        response = await axios.post('http://localhost:8000/maintenanceTasks/', task);
-      } else if (activeTaskType === "ImageTask") {
-        console.log("Enter as an image task")
-        response = await axios.post('http://localhost:8000/imagingTasks/', task);
+      const taskNames = task.name.split(',').map(name => name.trim());
+      const jsonDataList = task.jsonData.split('!').map(jsonData => jsonData.trim());
+      console.log(taskNames, jsonDataList)
+      console.log("The task type is ",activeTaskType)
+
+      const tasks = taskNames.map((name, index) => ({
+        name: name,
+        jsonData: jsonDataList[index]
+      }));
+
+      for (const taskData of tasks){
+        try{
+          let response = "";
+          if (activeTaskType === "MaintenanceTask") {
+            console.log("Enter as a maintenance task")
+            response = await axios.post('http://localhost:8000/maintenanceTasks/', taskData);
+          } else if (activeTaskType === "ImageTask") {
+            console.log("Enter as an image task")
+            response = await axios.post('http://localhost:8000/imagingTasks/', taskData);
+          }
+        } catch (error) {
+          console.error('Error posting task data:', error);
+        }
       }
-      console.log('Server response:', response);
       fetchData();
       window.location.reload();
     }
     catch (error) {
       console.error('Error posting data:', error);
     }
-
   };
 
   const handleDeleteM = async (taskName) => {
@@ -144,7 +177,7 @@ const AddTask = () => {
           </label>
           <label>
             Upload Json File:
-            <input type="file" accept=".json" onChange={handleFileChange} />
+            <input type="file" accept=".json" onChange={handleFileChange} multiple />
           </label>
           <button type="submit">Add Task</button>
         </form>
