@@ -60,3 +60,16 @@ docker exec -it soso-container /bin/bash
 ```
 
 In the shell, you can run commands like `python manage.py test <test-module>` as in the dev container.
+
+## Run Project
+To start backend, go to the directory `Satellite_Operations_Services_Optimizer/Satellite_Operations_Services_Optimizer`, run the following command:
+
+```
+python manage.py runserver 0.0.0.0:8000
+```
+
+To start frontend, navigate to the directory `Satellite_Operations_Services_Optimizer/satellite_frontend`, run the following command:
+```
+npm start
+```
+The web app would be shown at localhost:3000/ after a while.
