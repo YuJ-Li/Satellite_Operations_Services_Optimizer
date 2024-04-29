@@ -146,7 +146,6 @@ def imaging_task_list(request):
         json_content = json.loads(data['jsonData'])
         name = data['name']
         imaging_tasks = convert_json_to_imaging_task(json_content, name, satellites)
-
         for imaging_task in imaging_tasks:
             try:
                 add_imageTask(name = imaging_task.name,
@@ -159,9 +158,10 @@ def imaging_task_list(request):
                         imagingRegionLongitude=imaging_task.imagingRegionLongitude,
                         achievability=imaging_task.achievability,
                         )
-                return Response(status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response(status=status.HTTP_201_CREATED)
         
     
 @api_view(['GET', 'PUT', 'DELETE'])

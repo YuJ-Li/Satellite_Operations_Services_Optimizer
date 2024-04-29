@@ -173,7 +173,7 @@ const AddTask = () => {
           </div>
           <label>
             Task Name:
-            <input type="text" name="name" value={task.name} onChange={handleChange} required readOnly />
+            <input type="text" name="name" value={task.name} onChange={handleChange} required />
           </label>
           <label>
             Upload Json File:
