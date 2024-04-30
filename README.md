@@ -97,7 +97,7 @@ The Groundstation page is currently a placeholder and does not affect the outcom
 
 Then go to the Tasks Page
 ### Tasks Page
-On this page, you can add one or multiple tasks by specifying the task name and uploading the corresponding JSON file(s). Sample tasks are available in the "/order_samples" directory. Specifically, "group2," "group3," and "group4_newest" contain imaging tasks, while "m_group1" and "m_group2" consist of miscellaneous tasks. Additionally, you can delete a task by clicking on the delete button next to it.
+On this page, you can add one or multiple tasks by specifying type of task, task name and uploading the corresponding JSON file(s). Sample tasks are available in the "/order_samples" directory. Specifically, "group2," "group3," and "group4_newest" contain imaging tasks, while "m_group1" and "m_group2" consist of miscellaneous tasks. Additionally, you can delete a task by clicking on the delete button next to it.
 
 ![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/tasks.png)
 
