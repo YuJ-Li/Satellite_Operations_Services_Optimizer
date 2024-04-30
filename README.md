@@ -111,3 +111,4 @@ YYYY-MM-DD HH:MM:SS
 
 ![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/data.png)
 
+The scheduling for the following 48 hours will then appear in the table
