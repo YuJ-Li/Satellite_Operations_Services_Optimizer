@@ -109,6 +109,8 @@ On this page, you have the capability to set a global time for testing purposes.
 YYYY-MM-DD HH:MM:SS
 ```
 
+The scheduling for the following 48 hours will then appear in the table below
+
 ![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/data.png)
 
-The scheduling for the following 48 hours will then appear in the table
+
