@@ -82,7 +82,7 @@ Upon entering the app, you will land directly on the home page.
 
 ![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/home.png)
 
-To begin, simply navigate to the "Add Satellite" page.
+To begin, simply navigate to the Satellite page.
 
 ### Satellite Page
 On this page, you have the option to add a satellite by entering its name and the corresponding Two-Line Element (TLE) data. You can find some sample TLEs in the "TLE/" directory, which you can use directly. Please note that satellites should be added one by one.
