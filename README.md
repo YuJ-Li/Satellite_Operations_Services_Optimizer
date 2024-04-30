@@ -80,23 +80,34 @@ For the best user experience, we suggest running the web app on a 2K screen. Cur
 ### Home page
 Upon entering the app, you will land directly on the home page.
 
+![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/home.png)
+
 To begin, simply navigate to the "Add Satellite" page.
 
 ### Satellite Page
 On this page, you have the option to add a satellite by entering its name and the corresponding Two-Line Element (TLE) data. You can find some sample TLEs in the "TLE/" directory, which you can use directly. Please note that satellites should be added one by one.
 
+![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/satellites.png)
+
 Then navigate to the Groundstation Page
 ### Groundstation Page
 The Groundstation page is currently a placeholder and does not affect the outcome of the application.
+
+![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/groundstations.png)
 
 Then go to the Tasks Page
 ### Tasks Page
 On this page, you can add one or multiple tasks by specifying the task name and uploading the corresponding JSON file(s). Sample tasks are available in the "/order_samples" directory. Specifically, "group2," "group3," and "group4_newest" contain imaging tasks, while "m_group1" and "m_group2" consist of miscellaneous tasks. Additionally, you can delete a task by clicking on the delete button next to it.
 
+![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/tasks.png)
+
+Next go to the Data page
 ### Data Page
 On this page, you have the capability to set a global time for testing purposes. This time setting allows you to generate a complete schedule for all satellites. While in reality, the algorithm would operate based on the current time, for observation of performance, it currently operates according to the time set by the user. The time format should adhere to the 24-hour clock system as the following:
 
 ```
 YYYY-MM-DD HH:MM:SS
 ```
+
+![](https://github.com/YuJ-Li/Satellite_Operations_Services_Optimizer/blob/main/demo/data.png)
 
